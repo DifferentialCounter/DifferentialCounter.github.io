@@ -1,0 +1,140 @@
+body {
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    justify-content: center;
+    background-color: #f5f6f8;
+    padding: 20px;
+}
+
+.container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    width: 700px;
+}
+
+h2 {
+    margin-top: 0;
+}
+
+.keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px 10px;
+    margin-bottom: 20px;
+}
+
+.key {
+    background: #e0e0e0;
+    padding: 10px;
+    text-align: center;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.counter-display div {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+}
+
+button {
+    padding: 8px 14px;
+    margin-top: 10px;
+    margin-right: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #540483;
+    color: white;
+    cursor: pointer;
+}
+
+textarea {
+    width: 100%;
+    height: 60px;
+    margin-top: 10px;
+    font-family: monospace;
+}
+
+.unassigned {
+    color: #c62828;
+    font-weight: bold;
+    border: 2px dashed #c62828;
+    background-color: #ffebee;
+}
+
+.draggable {
+    background-color: #f0f0ff;
+    border: 1px solid #ccc;
+    cursor: grab;
+}
+
+.dropzone {
+    background-color: #e0f7fa;
+    border: 2px dashed #00796b;
+}
+
+/* Position the waffle icon in the top-left corner */
+.waffle-icon {
+  position: fixed;     /* Stay in place on scroll */
+  top: 10px;
+  left: 10px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: 3px;
+  cursor: pointer;
+  z-index: 101;
+}
+
+/* The waffle dots */
+.waffle-icon div {
+  width: 8px;
+  height: 8px;
+  background-color: #333;
+  border-radius: 50%;
+}
+
+/* Menu hidden by default, shown below the icon */
+.waffle-menu {
+  display: none; /* Hidden until clicked */
+  position: fixed;
+  top: 60px;     /* Below the icon */
+  left: 10px;    /* Left-aligned */
+  background: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  padding: 10px;
+  width: 220px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  z-index: 100;
+}
+
+/* Menu items */
+.waffle-menu a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  text-decoration: none;
+  color: #333;
+  font-size: 12px;
+  text-align: center;
+}
+
+.waffle-menu a i {
+  font-size: 20px;
+  margin-bottom: 5px;
+}
+
+.waffle-menu a:hover {
+  background-color: #ddd;
+}
