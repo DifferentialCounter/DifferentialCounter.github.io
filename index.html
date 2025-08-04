@@ -18,7 +18,7 @@
       <i class="fas fa-flask"></i>
       <span>Research Counter</span>
     </a>
-<!--    <a href="Counter_No_Save.html">
+    <!-- <a href="Counter_No_Save.html">
       <i class="fas fa-ban"></i>
       <span>Aspirate Counter</span>
     </a> -->
@@ -63,7 +63,7 @@
     clickSound.volume = 0.75;
 
     const cellTypes = ["Blasts", "NRBCs", "Eos", "Basos", "Lymphs", "Monos", "Neuts", "Metas", "Myelo", "Plasma"];
-    let keyBindings = Array.from({ length: 10 }, (_, i) => i);
+    let keyBindings = [0, 1, 2, 3, 6, 4, 5, 7, 8, 9];
     const cellCounts = {};
     let totalCount = 0;
     const MAX_COUNT = 500;
@@ -194,15 +194,37 @@
 
     function updateDisplay() {
         counterDisplay.innerHTML = '';
-        const displayOrder = ["Blasts", "Neuts", "Eos", "Basos", "Monos", "Lymphs", "Plasma", "NRBCs"];
-        displayOrder.forEach(type =>  {
-          const count = cellCounts[type] || 0;
-          const percent = totalCount > 0 ? ((cellCounts[type] / totalCount) * 100.toFixed(1): '0.0';
-          const row = document.createElement('div');
-          row.innerHTML = `<span>$(type)</span><span>${cellCounts[type]} (${percent}%)</span>`
-          counterDisplay.appendChild(row);
+        const displayOrder = ["Blasts", "Neuts and Precursors", "Eos", "Basos", "Monos", "Lymphs", "Plasma", "NRBCs"];
+
+        displayOrder.forEach(type => {
+          if (type === "Neuts and Precursors") {
+            const neuts = cellCounts["Neuts"];
+            const metas = cellCounts["Metas"];
+            const myelo = cellCounts["Myelo"];
+            const sum = neuts + metas + myelo;
+            const percent = totalCount > 0 ? ((sum / totalCount) * 100).toFixed(1) : '0.0';
+            const row = document.createElement('div');
+            row.innerHTML = `<span>${type}</span><span>${sum} (${percent}%)</span>`;
+            counterDisplay.appendChild(row);
+
+            // Add raw numbers display
+            const subRow = document.createElement('div');
+            subRow.style.fontSize = "0.95em";
+            subRow.style.marginLeft = "1em";
+            subRow.innerHTML = `
+              <span style="color:#4363d8;">Neuts: ${neuts}</span>
+              <span style="margin-left:1em;color:#f58231;">Metas: ${metas}</span>
+              <span style="margin-left:1em;color:#46f0f0;">Myelo: ${myelo}</span>
+            `;
+            counterDisplay.appendChild(subRow);
+          } else {
+            const percent = totalCount > 0 ? ((cellCounts[type] / totalCount) * 100).toFixed(1) : '0.0';
+            const row = document.createElement('div');
+            row.innerHTML = `<span>${type}</span><span>${cellCounts[type]} (${percent}%)</span>`;
+            counterDisplay.appendChild(row);
+          }
         });
-      
+
         totalDisplay.textContent = `${totalCount} / ${MAX_COUNT}`;
         keystrokeLog.value = history.map(h => cellTypes.indexOf(h)).join('');
         updateChart();
