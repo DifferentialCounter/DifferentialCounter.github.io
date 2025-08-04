@@ -194,19 +194,15 @@
 
     function updateDisplay() {
         counterDisplay.innerHTML = '';
-        const displayOrder = ["Blasts", "Neuts", "Eos", "Basos", "Monos",
-                              "Lymphs", "Plasma", "NRBCs"];
-        
-        displayOrder.forEach(type => {
-           const count = cellCounts[type] || 0;
-           const percent = totalCount > 0 && type !== "NRBCs"
-             ? ((count / totalCount) * 100).toFixed(1)
-             : '0.0';
-           const row = document.createElement('div');
-           row.innerHTML = `<span>${type}</span><span>${count}
-        (${percent}%)</span>`;
-           counterDisplay.appendChild(row);
+        const displayOrder = ["Blasts", "Neuts", "Eos", "Basos", "Monos", "Lymphs", "Plasma", "NRBCs"];
+        displayOrder.forEach(type =>  {
+          const count = cellCounts[type] || 0;
+          const percent = totalCount > 0 ? ((cellCounts[type] / totalCount) * 100.toFixed(1): '0.0';
+          const row = document.createElement('div');
+          row.innerHTML = `<span>$(type)</span><span>${cellCounts[type]} (${percent}%)</span>`
+          counterDisplay.appendChild(row);
         });
+      
         totalDisplay.textContent = `${totalCount} / ${MAX_COUNT}`;
         keystrokeLog.value = history.map(h => cellTypes.indexOf(h)).join('');
         updateChart();
