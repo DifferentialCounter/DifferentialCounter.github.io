@@ -18,7 +18,7 @@
       <i class="fas fa-flask"></i>
       <span>Research Counter</span>
     </a>
-<!--    <a href="Counter_No_Save.html">
+    <!-- <a href="Counter_No_Save.html">
       <i class="fas fa-ban"></i>
       <span>Aspirate Counter</span>
     </a> -->
@@ -59,9 +59,9 @@
     const clickSound = new Audio('media/click.wav');
     clickSound.volume = 0.75;
 
-    const cellTypes = ["Blasts", "NRBCs", "Eos", "Basos", "Lymphs", "Monos", "Neuts", "Metas", "Myelo", "Plasma"];
     const MAX_COUNT = 200;
-    let keyBindings = Array.from({ length: 10 }, (_, i) => i);
+    const cellTypes = ["Blasts", "NRBCs", "Eos", "Basos", "Lymphs", "Monos", "Neuts", "Metas", "Myelo", "Promyelo"];
+    let keyBindings = [0, 1, 2, 3, 6, 4, 5, 7, 8, 9];
     const cellCounts = {};
     let totalCount = 0;
     let nrbcCount = 0;
@@ -213,20 +213,33 @@
 
     function updateDisplay() {
       counterDisplay.innerHTML = '';
-      const displayOrder = ["Blasts", "Neuts", "Lymphs", "Monos", "Eos", "Basos"];
+      // Custom display order:
+      const displayOrder = [
+        "Blasts",
+        "Promyelo",
+        "Myelo",
+        "Metas",
+        "Neuts",
+        "Lymphs",
+        "Monos",
+        "Eos",
+        "Basos"
+      ];
 
-      counterDisplay.innerHTML = '';
       displayOrder.forEach(type => {
-         const count = cellCounts[type] || 0;
-         const percent = totalCount > 0 ? ((count / totalCount) *
-      100).toFixed(1) : '0.0';
-         const row = document.createElement('div');
-         row.innerHTML = `<span>${type}</span><span>${count}
-      (${percent}%)</span>`;
-         counterDisplay.appendChild(row);
+        const count = cellCounts[type] || 0;
+        const percent = totalCount > 0 && type !== "NRBCs"
+          ? ((count / totalCount) * 100).toFixed(1)
+          : '0.0';
+        const row = document.createElement('div');
+        row.innerHTML = `<span>${type}</span><span>${count} (${percent}%)</span>`;
+        counterDisplay.appendChild(row);
       });
-      
-      nrbcDisplay.textContent = nrbcCount;
+
+      // Optionally display NRBCs separately
+      const nrbcRow = document.createElement('div');
+      nrbcRow.innerHTML = `<span>NRBCs</span><span>${nrbcCount}</span>`;
+      counterDisplay.appendChild(nrbcRow);
 
       totalDisplay.textContent = `${totalCount} / ${MAX_COUNT}`;
       nrbcDisplay.textContent = nrbcCount;
