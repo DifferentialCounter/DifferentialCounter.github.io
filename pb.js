@@ -1,8 +1,13 @@
-// pb.js
 (function renderPB(containerId = "pbContainer") {
   const container = document.getElementById(containerId);
   container.innerHTML = `
     <h2>Peripheral Blood Smear Counter</h2>
+    <div style="margin-bottom: 16px;">
+      <label for="pbCaseNumber"><strong>Case Number:</strong></label>
+      <input type="text" id="pbCaseNumber" style="margin-right: 20px; width: 120px;">
+      <label for="pbPathInitials"><strong>Pathologist Initials:</strong></label>
+      <input type="text" id="pbPathInitials" style="width: 80px;">
+    </div>
     <div class="keypad" id="pbKeypad"></div>
     <div class="remap" id="pbRemap"></div>
     <div id="pbUnassignedWarning" style="color: red; font-weight: bold; margin-top: 6px;"></div>
@@ -10,6 +15,7 @@
     <div><strong>Total (excluding NRBCs):</strong> <span id="pbTotal">0 / 200</span></div>
     <div><strong>NRBCs counted separately:</strong> <span id="pbNRBC">0</span></div>
     <button onclick="pbUndoAll()">Undo All</button>
+    <button onclick="pbExportExcel()">Export Case to Excel</button>
     <textarea id="pbLog"></textarea>
     <div id="pbChartContainer">
       <canvas id="pbChart"></canvas>
@@ -75,6 +81,35 @@
       keyBindings,
     };
     localStorage.setItem("pbState", JSON.stringify(state));
+  }
+
+  function snapshotCounts(count) {
+    const displayOrder = [
+      "Blasts",
+      "Promyelo",
+      "Myelo",
+      "Metas",
+      "Neuts",
+      "Lymphs",
+      "Monos",
+      "Eos",
+      "Basos",
+      "NRBCs",
+    ];
+
+    // Build snapshot in display order
+    const snap = displayOrder.map((type) => {
+      let countVal, percentVal;
+      if (type === "NRBCs") {
+        countVal = nrbcCount;
+        percentVal = ""; // NRBCs are counted separately
+      } else {
+        countVal = cellCounts[type] || 0;
+        percentVal = count > 0 ? ((countVal / count) * 100).toFixed(1) + "%" : "0.0%";
+      }
+      return { CellType: type, Count: countVal, Percent: percentVal };
+    });
+    snapshots[`Count_${count}`] = snap;
   }
 
   function createKeypad() {
@@ -146,8 +181,11 @@
     clickSound.currentTime = 0;
     clickSound.play();
 
+    if (totalCount_PB % 50 === 0) snapshotCounts(totalCount_PB);
+
     if (totalCount_PB === MAX_COUNT) {
       chime.play();
+      pbExportExcel();
     } else if (totalCount_PB % 100 === 0) {
       beep.play();
     }
@@ -223,14 +261,32 @@
     totalCount_PB = 0;
     nrbcCount = 0;
     log.value = "";
+    document.getElementById("pbCaseNumber").value = "";
+    document.getElementById("pbPathInitials").value = "";
     updateDisplay();
     saveState();
+  };
+
+  window.pbExportExcel = function () {
+    const caseNumber =
+      document.getElementById("pbCaseNumber").value.trim() || "Case";
+    const initials =
+      document.getElementById("pbPathInitials").value.trim() || "Path";
+    const workbook = XLSX.utils.book_new();
+    Object.keys(snapshots).forEach((label) => {
+      const ws = XLSX.utils.json_to_sheet(snapshots[label]);
+      XLSX.utils.book_append_sheet(workbook, ws, label);
+    });
+    const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([wbout], { type: "application/octet-stream" });
+    saveAs(blob, `${caseNumber}_${initials}_pb.xlsx`);
   };
 
   log.addEventListener("input", () => {
     // Reset counts and history, but DO NOT clear the textbox!
     cellTypes.forEach((type) => (cellCounts[type] = 0));
-    totalCount = 0;
+    totalCount_PB = 0;
+    nrbcCount = 0;
     history = [];
     for (let char of log.value) {
       const keyNum = parseInt(char);
@@ -238,13 +294,23 @@
         const idx = keyBindings[keyNum];
         const type = cellTypes[idx];
         cellCounts[type]++;
-        totalCount++;
         history.push(type);
-        if (totalCount % 50 === 0) snapshotCounts(totalCount);
+        if (type === "NRBCs") {
+          nrbcCount++;
+        } else {
+          totalCount_PB++;
+        }
+        if (totalCount_PB % 50 === 0) snapshotCounts(totalCount_PB);
       }
     }
     updateDisplay();
     saveState();
+
+    // Play chime and export at exactly 200 cells
+    if (totalCount_PB === MAX_COUNT) {
+      chime.play();
+      pbExportExcel();
+    }
   });
 
   const ctx = document.getElementById("pbChart").getContext("2d");
