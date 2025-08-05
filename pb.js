@@ -160,7 +160,7 @@
     remapArea.innerHTML = `
         <details open>
         <summary><strong>Customize Key Mappings</strong></summary>
-        <div style="margin-top: 10px;">4321233213421
+        <div style="margin-top: 10px;">
             <h4>Assign cell types to number keys:</h4>
             <table style="margin-bottom:10px;">
             <tr><th>Key</th><th>Cell Type</th></tr>
@@ -297,6 +297,7 @@
   // Init
   loadState();
   updateDisplay();
+  createKeypad();
   createRemapArea();
 
   document.addEventListener("keydown", (e) => {
