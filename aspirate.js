@@ -79,14 +79,55 @@
   }
 
   function snapshotCounts(count) {
-    const snap = cellTypes.map((type) => ({
-      CellType: type,
-      Count: cellCounts[type],
-      Percent:
-        count > 0
-          ? ((cellCounts[type] / count) * 100).toFixed(1) + "%"
-          : "0.0%",
-    }));
+    const displayOrder = [
+      "Blasts",
+      "Neuts and Precursors",
+      "Eos",
+      "Basos",
+      "Monos",
+      "Lymphs",
+      "Plasma",
+      "NRBCs",
+      "Atypical",
+      "Other",
+    ];
+
+    // Calculate Neuts and Precursors sum
+    const neutsPrecursors =
+      cellCounts["Neuts"] + cellCounts["Metas"] + cellCounts["Myelo"];
+
+    // Build snapshot in display order
+    const snap = displayOrder.map((type) => {
+      let countVal, percentVal;
+      if (type === "Neuts and Precursors") {
+        countVal = neutsPrecursors;
+        percentVal =
+          count > 0
+            ? ((neutsPrecursors / count) * 100).toFixed(1) + "%"
+            : "0.0%";
+      } else {
+        countVal = cellCounts[type] || 0;
+        percentVal =
+          count > 0 ? ((countVal / count) * 100).toFixed(1) + "%" : "0.0%";
+      }
+      return { CellType: type, Count: countVal, Percent: percentVal };
+    });
+
+    // Calculate M:E ratio
+    const meNumerator =
+      cellCounts["Eos"] +
+      cellCounts["Basos"] +
+      cellCounts["Neuts"] +
+      cellCounts["Metas"] +
+      cellCounts["Myelo"];
+    const meRatio =
+      cellCounts["NRBCs"] > 0
+        ? (meNumerator / cellCounts["NRBCs"]).toFixed(2)
+        : "–";
+
+    // Add M:E ratio as a row at the end
+    snap.push({ CellType: "M:E Ratio", Count: meRatio, Percent: "" });
+
     snapshots[`Count_${count}`] = snap;
   }
 
