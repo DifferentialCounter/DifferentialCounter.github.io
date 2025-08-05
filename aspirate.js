@@ -28,13 +28,6 @@
   const clickSound = new Audio("media/click.wav");
   clickSound.volume = 0.75;
 
-  const initialsInput_check = document.getElementById("aspiratePathInitials");
-  initialsInput_check.addEventListener("change", function () {
-    if (this.value.trim().toUpperCase() === "AM") {
-        window.open("https://www.youtube.com/watch?v=_-ryos-Xbks")
-    }
-  });
-
   const cellTypes = [
     "Blasts",
     "NRBCs",
