@@ -77,6 +77,31 @@
     localStorage.setItem("pbState", JSON.stringify(state));
   }
 
+  function createKeypad() {
+    keypad.innerHTML = "";
+    const layout = [
+      [7, 8, 9],
+      [4, 5, 6],
+      [1, 2, 3],
+      [null, 0, null],
+    ];
+
+    layout.forEach((row) => {
+      row.forEach((i) => {
+        const key = document.createElement("div");
+        if (i === null) {
+          key.style.visibility = "hidden";
+        } else {
+          const cellIndex = keyBindings[i];
+          key.className = "key";
+          key.textContent = `${i}: ${cellTypes[cellIndex]}`;
+          key.onclick = () => handleInput(cellIndex);
+        }
+        keypad.appendChild(key);
+      });
+    });
+  }
+
   function updateDisplay() {
     counterDisplay.innerHTML = "";
     const displayOrder = [
