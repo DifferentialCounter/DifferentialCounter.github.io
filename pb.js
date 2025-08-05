@@ -124,7 +124,7 @@
       counterDisplay.appendChild(row);
     });
     const nrbcRow = document.createElement("div");
-    nrbcRow.innerHTML = `<span>NRBCs</span><span>${nrbcCount}</span>`;
+    nrbcRow.innerHTML = `<span>NRBCs</span><span> - ${nrbcCount}</span>`;
     counterDisplay.appendChild(nrbcRow);
 
     totalDisplay.textContent = `${totalCount_PB} / ${MAX_COUNT}`;
