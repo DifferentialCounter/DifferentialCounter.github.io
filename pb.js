@@ -105,7 +105,8 @@
         percentVal = ""; // NRBCs are counted separately
       } else {
         countVal = cellCounts[type] || 0;
-        percentVal = count > 0 ? ((countVal / count) * 100).toFixed(1) + "%" : "0.0%";
+        percentVal =
+          count > 0 ? ((countVal / count) * 100).toFixed(1) + "%" : "0.0%";
       }
       return { CellType: type, Count: countVal, Percent: percentVal };
     });
@@ -306,11 +307,16 @@
     updateDisplay();
     saveState();
 
-    // Play chime and export at exactly 200 cells
-    if (totalCount_PB === MAX_COUNT_PB) {
-      chime.play();
-      pbExportExcel();
-    }
+    log.addEventListener("input", () => {
+      // ...existing code...
+
+      // Only export if PB tab is active
+      const pbApp = document.getElementById("pbApp");
+      if (totalCount_PB === MAX_COUNT && pbApp.classList.contains("active")) {
+        chime.play();
+        pbExportExcel();
+      }
+    });
   });
 
   const ctx = document.getElementById("pbChart").getContext("2d");
