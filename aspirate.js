@@ -331,7 +331,7 @@
     updateDisplay();
     saveState();
 
-    if (totalCount === 500) {
+    if (totalCount === MAX_COUNT) {
       chime.play();
       aspirateExportExcel();
     }
