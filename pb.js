@@ -45,7 +45,7 @@
   let nrbcCount = 0;
   let history = [];
   const snapshots = {};
-  const MAX_COUNT = 200;
+  const MAX_COUNT_PB = 200;
 
   cellTypes.forEach((type) => (cellCounts[type] = 0));
 
@@ -162,7 +162,7 @@
     nrbcRow.innerHTML = `<span>NRBCs</span><span> - ${nrbcCount}</span>`;
     counterDisplay.appendChild(nrbcRow);
 
-    totalDisplay.textContent = `${totalCount_PB} / ${MAX_COUNT}`;
+    totalDisplay.textContent = `${totalCount_PB} / ${MAX_COUNT_PB}`;
     nrbcDisplay.textContent = nrbcCount;
 
     updateChart();
@@ -183,7 +183,7 @@
 
     if (totalCount_PB % 50 === 0) snapshotCounts(totalCount_PB);
 
-    if (totalCount_PB === MAX_COUNT) {
+    if (totalCount_PB === MAX_COUNT_PB) {
       chime.play();
       pbExportExcel();
     } else if (totalCount_PB % 100 === 0) {
@@ -307,7 +307,7 @@
     saveState();
 
     // Play chime and export at exactly 200 cells
-    if (totalCount_PB === MAX_COUNT) {
+    if (totalCount_PB === MAX_COUNT_PB) {
       chime.play();
       pbExportExcel();
     }
