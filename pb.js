@@ -311,7 +311,7 @@
 
     // Only export if PB tab is active
     const pbApp = document.getElementById("pbApp");
-    if (totalCount_PB === MAX_COUNT_PB && pbApp.classList.contains("active")) {
+    if (totalCount_PB === 200 && pbApp.classList.contains("active")) {
       chime_pb.play();
     }
   });
