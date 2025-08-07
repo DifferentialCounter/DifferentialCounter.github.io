@@ -4,10 +4,10 @@
   container.innerHTML = `
     <h2>Aspirate Smear Counter</h2>
     <div style="margin-bottom: 16px;">
-        <label for="aspirateCaseNumber"><strong>Case Number:</strong></label>
-        <input type="text" id="aspirateCaseNumber" style="margin-right: 20px; width: 120px;">
-        <label for="aspiratePathInitials"><strong>Pathologist Initials:</strong></label>
-        <input type="text" id="aspiratePathInitials" style="width: 80px;">
+      <label><strong>Case Number:</strong></label>
+      <span id="aspirateCaseDisplay" style="margin-right: 20px;"></span>
+      <label><strong>Pathologist Initials:</strong></label>
+      <span id="aspirateInitialsDisplay"></span>
     </div>
     <div class="keypad" id="aspirateKeypad"></div>
     <div class="remap" id="aspirateRemap"></div>
@@ -27,6 +27,13 @@
   const chime = new Audio("media/complete.wav");
   const clickSound = new Audio("media/click.wav");
   clickSound.volume = 0.75;
+
+  document.addEventListener("caseInfoReady", () => {
+    document.getElementById("aspirateCaseDisplay").textContent =
+      window.caseInfo.caseNumber;
+    document.getElementById("aspirateInitialsDisplay").textContent =
+      window.caseInfo.initials;
+  });
 
   const cellTypes = [
     "Blasts",
@@ -62,12 +69,18 @@
   function loadState() {
     const saved = localStorage.getItem("aspirateState");
     if (!saved) return;
+
     try {
       const state = JSON.parse(saved);
-      Object.assign(cellCounts, state.cellCounts);
-      totalCount = state.totalCount || 0;
-      history = state.history || [];
-      keyBindings = state.keyBindings || keyBindings;
+
+      // Keep only keyBindings
+      if (state.keyBindings) keyBindings = state.keyBindings;
+
+      // Reset everything else
+      cellTypes.forEach((type) => (cellCounts[type] = 0));
+      totalCount = 0;
+      history = [];
+      for (let key in snapshots) delete snapshots[key];
     } catch (e) {
       console.error("Failed to load Aspirate state:", e);
     }
@@ -76,6 +89,44 @@
   function saveState() {
     const state = { cellCounts, totalCount, history, keyBindings };
     localStorage.setItem("aspirateState", JSON.stringify(state));
+  }
+
+  function playSound(sound) {
+    try {
+      sound.pause();
+      sound.currentTime = 0;
+      sound.play();
+    } catch (e) {
+      console.warn("Audio playback failed:", e);
+    }
+  }
+
+  function handleInput(index) {
+    const type = cellTypes[index];
+    cellCounts[type]++;
+    totalCount++;
+    playSound(clickSound);
+    history.push(type);
+    if (totalCount % 50 === 0) snapshotCounts(totalCount);
+
+    updateDisplay();
+    saveState();
+
+    const aspirateApp = document.getElementById("aspirateApp");
+    if (
+      totalCount === MAX_COUNT &&
+      aspirateApp &&
+      aspirateApp.classList.contains("active")
+    ) {
+      playSound(chime);
+      aspirateExportExcel();
+      document.getElementById("aspirateOverrideContainer").style.display =
+        "block";
+    } else if (totalCount > MAX_COUNT && !allowOverLimit) {
+      return; // prevent over-limit count
+    } else if (totalCount % 100 === 0) {
+      playSound(beep);
+    }
   }
 
   function snapshotCounts(count) {
@@ -265,7 +316,6 @@
         createKeypad();
       };
     }
-
     // Highlight unassigned cell types
     const assignedIndexes = new Set(keyBindings);
     const unassigned = cellTypes.filter((_, idx) => !assignedIndexes.has(idx));
@@ -297,10 +347,8 @@
   };
 
   window.aspirateExportExcel = function () {
-    const caseNumber =
-      document.getElementById("aspirateCaseNumber").value.trim() || "Case";
-    const initials =
-      document.getElementById("aspiratePathInitials").value.trim() || "Path";
+    const caseNumber = window.caseInfo.caseNumber || "Case";
+    const initials = window.caseInfo.initials || "Path";
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const workbook = XLSX.utils.book_new();
     Object.keys(snapshots).forEach((label) => {
@@ -391,8 +439,63 @@
   createKeypad();
   createRemapArea();
 
+  window.onload = () => {
+    const modal = document.getElementById("startupModal");
+    const modalCase = document.getElementById("modalCaseNumber");
+    const modalInitials = document.getElementById("modalInitials");
+    const modalBtn = document.getElementById("modalSubmitBtn");
+
+    modal.style.display = "flex";
+
+    modalBtn.onclick = function () {
+      const caseVal = modalCase.value.trim();
+      const initialsVal = modalInitials.value.trim();
+
+      if (!caseVal || !initialsVal) {
+        alert("Please enter both the case number and pathologist initials.");
+        return;
+      }
+
+      // Save in aspirate input
+      document.getElementById("aspirateCaseNumber").value = caseVal;
+      document.getElementById("aspiratePathInitials").value = initialsVal;
+
+      // Store in localStorage for PB
+      localStorage.setItem("sharedCaseNumber", caseVal);
+      localStorage.setItem("sharedInitials", initialsVal);
+
+      modal.style.display = "none";
+    };
+  };
+
   document.addEventListener("keydown", (e) => {
     if (document.activeElement === log) return;
+
+    const caseNumber = document
+      .getElementById("aspirateCaseNumber")
+      .value.trim();
+    const initials = document
+      .getElementById("aspiratePathInitials")
+      .value.trim();
+
+    // if (!caseNumber || !initials) {
+    //   if (!caseNumber) {
+    //     document.getElementById("aspirateCaseNumber").style.border =
+    //       "2px solid red";
+    //   }
+    //   if (!initials) {
+    //     document.getElementById("aspiratePathInitials").style.border =
+    //       "2px solid red";
+    //   }
+    //   alert(
+    //     "Please enter both the case number and pathologist initials before starting."
+    //   );
+    //   return;
+    // }
+
+    const aspirateApp = document.getElementById("aspirateApp");
+    if (!aspirateApp || !aspirateApp.classList.contains("active")) return;
+
     if (e.key >= "0" && e.key <= "9") {
       const keyNum = parseInt(e.key);
       const idx = keyBindings[keyNum];

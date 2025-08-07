@@ -36,6 +36,20 @@
       </div>
     </main>
 
+    <!-- Shared Case Info Modal -->
+    <div id="caseModal" class="modal-overlay">
+      <div class="modal-content">
+        <h3>Enter Case Details</h3>
+        <label for="modalCaseNumber">Case Number:</label>
+        <input type="text" id="modalCaseNumber" />
+        <br />
+        <label for="modalInitials">Pathologist Initials:</label>
+        <input type="text" id="modalInitials" />
+        <br />
+        <button id="modalSubmitBtn">Start</button>
+      </div>
+    </div>
+
     <script>
       // Handle toggle UI
       const aspirateBtn = document.getElementById("aspirateBtn");
@@ -69,8 +83,11 @@
         });
     </script>
 
+    <!-- Shared Modal Script -->
+    <script src="scripts/caseInfo.js"></script>
+
     <!-- Load scripts -->
-    <script src="aspirate.js"></script>
-    <script src="pb.js"></script>
+    <script src="scripts/aspirate.js"></script>
+    <script src="scripts/pb.js"></script>
   </body>
 </html>

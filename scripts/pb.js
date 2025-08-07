@@ -3,10 +3,10 @@
   container_pb.innerHTML = `
     <h2>Peripheral Blood Smear Counter</h2>
     <div style="margin-bottom: 16px;">
-      <label for="pbCaseNumber"><strong>Case Number:</strong></label>
-      <input type="text" id="pbCaseNumber" style="margin-right: 20px; width: 120px;">
-      <label for="pbPathInitials"><strong>Pathologist Initials:</strong></label>
-      <input type="text" id="pbPathInitials" style="width: 80px;">
+      <label><strong>Case Number:</strong></label>
+      <span id="pbCaseDisplay" style="margin-right: 20px;"></span>
+      <label><strong>Pathologist Initials:</strong></label>
+      <span id="pbInitialsDisplay"></span>
     </div>
     <div class="keypad" id="pbKeypad"></div>
     <div class="remap" id="pbRemap"></div>
@@ -26,6 +26,13 @@
   const chime_pb = new Audio("media/complete.wav");
   const clickSound_pb = new Audio("media/click.wav");
   clickSound_pb.volume = 0.75;
+
+  document.addEventListener("caseInfoReady", () => {
+    document.getElementById("pbCaseDisplay").textContent =
+      window.caseInfo.caseNumber;
+    document.getElementById("pbInitialsDisplay").textContent =
+      window.caseInfo.initials;
+  });
 
   const cellTypes_pb = [
     "Blasts",
@@ -60,13 +67,19 @@
   function loadState_pb() {
     const saved = localStorage.getItem("pbState");
     if (!saved) return;
+
     try {
       const state = JSON.parse(saved);
-      Object.assign(cellCounts_pb, state.cellCounts);
-      totalCount_PB = state.totalCount_PB || 0;
-      history_pb = state.history || [];
-      nrbcCount_pb = state.nrbcCount || 0;
-      keyBindings_pb = state.keyBindings || keyBindings_pb;
+
+      // Keep only keyBindings
+      if (state.keyBindings) keyBindings_pb = state.keyBindings;
+
+      // Reset everything else
+      cellTypes_pb.forEach((type) => (cellCounts_pb[type] = 0));
+      totalCount_PB = 0;
+      nrbcCount_pb = 0;
+      history_pb = [];
+      for (let key in snapshots_pb) delete snapshots_pb[key];
     } catch (e) {
       console.error("Failed to load PB state:", e);
     }
@@ -111,6 +124,16 @@
       return { CellType: type, Count: countVal, Percent: percentVal };
     });
     snapshots_pb[`Count_${count}`] = snap;
+  }
+
+  function playSound(sound) {
+    try {
+      sound.pause();
+      sound.currentTime = 0;
+      sound.play();
+    } catch (e) {
+      console.warn("Audio playback failed:", e);
+    }
   }
 
   function createKeypad_pb() {
@@ -170,6 +193,30 @@
   }
 
   function handleInput_pb(index) {
+    const caseNumber = document
+      .getElementById("aspirateCaseNumber")
+      ?.value.trim();
+    const initials = document
+      .getElementById("aspiratePathInitials")
+      ?.value.trim();
+
+    if (!caseNumber || !initials) {
+      if (!caseNumber) {
+        document.getElementById("pbCaseNumber").style.border = "2px solid red";
+      }
+      if (!initials) {
+        document.getElementById("pbPathInitials").style.border =
+          "2px solid red";
+      }
+      alert(
+        "Please enter both the case number and pathologist initials before starting."
+      );
+      return;
+    }
+
+    document.getElementById("pbCaseNumber").style.border = "";
+    document.getElementById("pbPathInitials").style.border = "";
+
     const type = cellTypes_pb[index];
     cellCounts_pb[type]++;
     history_pb.push(type);
@@ -179,16 +226,20 @@
       totalCount_PB++;
     }
 
+    clickSound_pb.pause();
     clickSound_pb.currentTime = 0;
     clickSound_pb.play();
 
     if (totalCount_PB % 50 === 0) snapshotCounts_pb(totalCount_PB);
 
     if (totalCount_PB === MAX_COUNT_PB) {
-      chime_pb.play();
-      pbExportExcel_pb();
+      const pbApp = document.getElementById("pbApp");
+      if (pbApp && pbApp.classList.contains("active")) {
+        playSound(chime_pb);
+        pbExportExcel_pb();
+      }
     } else if (totalCount_PB % 100 === 0) {
-      beep_pb.play();
+      playSound(beep_pb);
     }
 
     updateDisplay_pb();
@@ -238,6 +289,17 @@
       };
     }
 
+    document
+      .getElementById("pbCaseNumber")
+      .addEventListener("input", function () {
+        this.style.border = "";
+      });
+    document
+      .getElementById("pbPathInitials")
+      .addEventListener("input", function () {
+        this.style.border = "";
+      });
+
     // Highlight unassigned cell types
     const assignedIndexes = new Set(keyBindings_pb);
     const unassigned = cellTypes_pb.filter(
@@ -271,10 +333,8 @@
   };
 
   window.pbExportExcel_pb = function () {
-    const caseNumber =
-      document.getElementById("pbCaseNumber").value.trim() || "Case";
-    const initials =
-      document.getElementById("pbPathInitials").value.trim() || "Path";
+    const caseNumber = window.caseInfo.caseNumber || "Case";
+    const initials = window.caseInfo.initials || "Path";
     const workbook = XLSX.utils.book_new();
     Object.keys(snapshots_pb).forEach((label) => {
       const ws = XLSX.utils.json_to_sheet(snapshots_pb[label]);
@@ -310,9 +370,12 @@
     saveState_pb();
 
     // Only export if PB tab is active
-    const pbApp = document.getElementById("pbApp");
-    if (totalCount_PB === 200 && pbApp.classList.contains("active")) {
-      chime_pb.play();
+    if (totalCount_PB === 200) {
+      const pbApp = document.getElementById("pbApp");
+      if (pbApp && pbApp.classList.contains("active")) {
+        chime_pb.play();
+        pbExportExcel_pb();
+      }
     }
   });
 
@@ -373,6 +436,14 @@
 
   document.addEventListener("keydown", (e) => {
     if (document.activeElement === log_pb) return;
+
+    const caseNumber = document.getElementById("pbCaseNumber").value.trim();
+    const initials = document.getElementById("pbPathInitials").value.trim();
+    if (!caseNumber || !initials) return;
+
+    const pbApp = document.getElementById("pbApp");
+    if (!pbApp || !pbApp.classList.contains("active")) return;
+
     if (e.key >= "0" && e.key <= "9") {
       const keyNum = parseInt(e.key);
       const idx = keyBindings_pb[keyNum];
