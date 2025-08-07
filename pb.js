@@ -1,6 +1,6 @@
 (function renderPB(containerId = "pbContainer") {
-  const container = document.getElementById(containerId);
-  container.innerHTML = `
+  const container_pb = document.getElementById(containerId);
+  container_pb.innerHTML = `
     <h2>Peripheral Blood Smear Counter</h2>
     <div style="margin-bottom: 16px;">
       <label for="pbCaseNumber"><strong>Case Number:</strong></label>
@@ -14,20 +14,20 @@
     <div class="counter-display" id="pbDisplay"></div>
     <div><strong>Total (excluding NRBCs):</strong> <span id="pbTotal">0 / 200</span></div>
     <div><strong>NRBCs counted separately:</strong> <span id="pbNRBC">0</span></div>
-    <button onclick="pbUndoAll()">Undo All</button>
-    <button onclick="pbExportExcel()">Export Case to Excel</button>
+    <button onclick="pbUndoAll_pb()">Undo All</button>
+    <button onclick="pbExportExcel_pb()">Export Case to Excel</button>
     <textarea id="pbLog"></textarea>
     <div id="pbChartContainer">
       <canvas id="pbChart"></canvas>
     </div>
   `;
 
-  const beep = new Audio("media/100.wav");
-  const chime = new Audio("media/complete.wav");
-  const clickSound = new Audio("media/click.wav");
-  clickSound.volume = 0.75;
+  const beep_pb = new Audio("media/100.wav");
+  const chime_pb = new Audio("media/complete.wav");
+  const clickSound_pb = new Audio("media/click.wav");
+  clickSound_pb.volume = 0.75;
 
-  const cellTypes = [
+  const cellTypes_pb = [
     "Blasts",
     "NRBCs",
     "Eos",
@@ -39,51 +39,51 @@
     "Myelo",
     "Promyelo",
   ];
-  let keyBindings = [0, 1, 2, 3, 6, 4, 5, 7, 8, 9];
-  const cellCounts = {};
+  let keyBindings_pb = [0, 1, 2, 3, 6, 4, 5, 7, 8, 9];
+  const cellCounts_pb = {};
   let totalCount_PB = 0;
-  let nrbcCount = 0;
-  let history = [];
-  const snapshots = {};
+  let nrbcCount_pb = 0;
+  let history_pb = [];
+  const snapshots_pb = {};
   const MAX_COUNT_PB = 200;
 
-  cellTypes.forEach((type) => (cellCounts[type] = 0));
+  cellTypes_pb.forEach((type) => (cellCounts_pb[type] = 0));
 
-  const keypad = document.getElementById("pbKeypad");
-  const counterDisplay = document.getElementById("pbDisplay");
-  const totalDisplay = document.getElementById("pbTotal");
-  const nrbcDisplay = document.getElementById("pbNRBC");
-  const log = document.getElementById("pbLog");
-  const remapArea = document.getElementById("pbRemap");
-  const warning = document.getElementById("pbUnassignedWarning");
+  const keypad_pb = document.getElementById("pbKeypad");
+  const counterDisplay_pb = document.getElementById("pbDisplay");
+  const totalDisplay_pb = document.getElementById("pbTotal");
+  const nrbcDisplay_pb = document.getElementById("pbNRBC");
+  const log_pb = document.getElementById("pbLog");
+  const remapArea_pb = document.getElementById("pbRemap");
+  const warning_pb = document.getElementById("pbUnassignedWarning");
 
-  function loadState() {
+  function loadState_pb() {
     const saved = localStorage.getItem("pbState");
     if (!saved) return;
     try {
       const state = JSON.parse(saved);
-      Object.assign(cellCounts, state.cellCounts);
+      Object.assign(cellCounts_pb, state.cellCounts);
       totalCount_PB = state.totalCount_PB || 0;
-      history = state.history || [];
-      nrbcCount = state.nrbcCount || 0;
-      keyBindings = state.keyBindings || keyBindings;
+      history_pb = state.history || [];
+      nrbcCount_pb = state.nrbcCount || 0;
+      keyBindings_pb = state.keyBindings || keyBindings_pb;
     } catch (e) {
       console.error("Failed to load PB state:", e);
     }
   }
 
-  function saveState() {
+  function saveState_pb() {
     const state = {
-      cellCounts,
+      cellCounts: cellCounts_pb,
       totalCount_PB,
-      history,
-      nrbcCount,
-      keyBindings,
+      history: history_pb,
+      nrbcCount: nrbcCount_pb,
+      keyBindings: keyBindings_pb,
     };
     localStorage.setItem("pbState", JSON.stringify(state));
   }
 
-  function snapshotCounts(count) {
+  function snapshotCounts_pb(count) {
     const displayOrder = [
       "Blasts",
       "Promyelo",
@@ -101,20 +101,20 @@
     const snap = displayOrder.map((type) => {
       let countVal, percentVal;
       if (type === "NRBCs") {
-        countVal = nrbcCount;
+        countVal = nrbcCount_pb;
         percentVal = ""; // NRBCs are counted separately
       } else {
-        countVal = cellCounts[type] || 0;
+        countVal = cellCounts_pb[type] || 0;
         percentVal =
           count > 0 ? ((countVal / count) * 100).toFixed(1) + "%" : "0.0%";
       }
       return { CellType: type, Count: countVal, Percent: percentVal };
     });
-    snapshots[`Count_${count}`] = snap;
+    snapshots_pb[`Count_${count}`] = snap;
   }
 
-  function createKeypad() {
-    keypad.innerHTML = "";
+  function createKeypad_pb() {
+    keypad_pb.innerHTML = "";
     const layout = [
       [7, 8, 9],
       [4, 5, 6],
@@ -128,18 +128,18 @@
         if (i === null) {
           key.style.visibility = "hidden";
         } else {
-          const cellIndex = keyBindings[i];
+          const cellIndex = keyBindings_pb[i];
           key.className = "key";
-          key.textContent = `${i}: ${cellTypes[cellIndex]}`;
-          key.onclick = () => handleInput(cellIndex);
+          key.textContent = `${i}: ${cellTypes_pb[cellIndex]}`;
+          key.onclick = () => handleInput_pb(cellIndex);
         }
-        keypad.appendChild(key);
+        keypad_pb.appendChild(key);
       });
     });
   }
 
-  function updateDisplay() {
-    counterDisplay.innerHTML = "";
+  function updateDisplay_pb() {
+    counterDisplay_pb.innerHTML = "";
     const displayOrder = [
       "Blasts",
       "Promyelo",
@@ -152,51 +152,51 @@
       "Basos",
     ];
     displayOrder.forEach((type) => {
-      const count = cellCounts[type] || 0;
+      const count = cellCounts_pb[type] || 0;
       const percent =
         totalCount_PB > 0 ? ((count / totalCount_PB) * 100).toFixed(1) : "0.0";
       const row = document.createElement("div");
       row.innerHTML = `<span>${type}</span><span> - ${count} (${percent}%)</span>`;
-      counterDisplay.appendChild(row);
+      counterDisplay_pb.appendChild(row);
     });
     const nrbcRow = document.createElement("div");
-    nrbcRow.innerHTML = `<span>NRBCs</span><span> - ${nrbcCount}</span>`;
-    counterDisplay.appendChild(nrbcRow);
+    nrbcRow.innerHTML = `<span>NRBCs</span><span> - ${nrbcCount_pb}</span>`;
+    counterDisplay_pb.appendChild(nrbcRow);
 
-    totalDisplay.textContent = `${totalCount_PB} / ${MAX_COUNT_PB}`;
-    nrbcDisplay.textContent = nrbcCount;
+    totalDisplay_pb.textContent = `${totalCount_PB} / ${MAX_COUNT_PB}`;
+    nrbcDisplay_pb.textContent = nrbcCount_pb;
 
-    updateChart();
+    updateChart_pb();
   }
 
-  function handleInput(index) {
-    const type = cellTypes[index];
-    cellCounts[type]++;
-    history.push(type);
+  function handleInput_pb(index) {
+    const type = cellTypes_pb[index];
+    cellCounts_pb[type]++;
+    history_pb.push(type);
     if (type === "NRBCs") {
-      nrbcCount++;
+      nrbcCount_pb++;
     } else {
       totalCount_PB++;
     }
 
-    clickSound.currentTime = 0;
-    clickSound.play();
+    clickSound_pb.currentTime = 0;
+    clickSound_pb.play();
 
-    if (totalCount_PB % 50 === 0) snapshotCounts(totalCount_PB);
+    if (totalCount_PB % 50 === 0) snapshotCounts_pb(totalCount_PB);
 
     if (totalCount_PB === MAX_COUNT_PB) {
-      chime.play();
-      pbExportExcel();
+      chime_pb.play();
+      pbExportExcel_pb();
     } else if (totalCount_PB % 100 === 0) {
-      beep.play();
+      beep_pb.play();
     }
 
-    updateDisplay();
-    saveState();
+    updateDisplay_pb();
+    saveState_pb();
   }
 
-  function createRemapArea() {
-    remapArea.innerHTML = `
+  function createRemapArea_pb() {
+    remapArea_pb.innerHTML = `
         <details open>
         <summary><strong>Customize Key Mappings</strong></summary>
         <div style="margin-top: 10px;">
@@ -223,24 +223,26 @@
     // Fill each select with cell types
     for (let i = 0; i <= 9; i++) {
       const select = document.getElementById(`pb-remap-select-${i}`);
-      cellTypes.forEach((type, idx) => {
+      cellTypes_pb.forEach((type, idx) => {
         const option = document.createElement("option");
         option.value = idx;
         option.textContent = type;
-        if (keyBindings[i] === idx) option.selected = true;
+        if (keyBindings_pb[i] === idx) option.selected = true;
         select.appendChild(option);
       });
       select.onchange = function () {
-        keyBindings[i] = parseInt(this.value);
-        saveState();
-        createRemapArea();
-        createKeypad();
+        keyBindings_pb[i] = parseInt(this.value);
+        saveState_pb();
+        createRemapArea_pb();
+        createKeypad_pb();
       };
     }
 
     // Highlight unassigned cell types
-    const assignedIndexes = new Set(keyBindings);
-    const unassigned = cellTypes.filter((_, idx) => !assignedIndexes.has(idx));
+    const assignedIndexes = new Set(keyBindings_pb);
+    const unassigned = cellTypes_pb.filter(
+      (_, idx) => !assignedIndexes.has(idx)
+    );
     const highlightDiv = document.getElementById("pbUnassignedHighlight");
     if (unassigned.length > 0) {
       highlightDiv.innerHTML =
@@ -256,26 +258,26 @@
     }
   }
 
-  window.pbUndoAll = function () {
-    for (let type in cellCounts) cellCounts[type] = 0;
-    history = [];
+  window.pbUndoAll_pb = function () {
+    for (let type in cellCounts_pb) cellCounts_pb[type] = 0;
+    history_pb = [];
     totalCount_PB = 0;
-    nrbcCount = 0;
-    log.value = "";
+    nrbcCount_pb = 0;
+    log_pb.value = "";
     document.getElementById("pbCaseNumber").value = "";
     document.getElementById("pbPathInitials").value = "";
-    updateDisplay();
-    saveState();
+    updateDisplay_pb();
+    saveState_pb();
   };
 
-  window.pbExportExcel = function () {
+  window.pbExportExcel_pb = function () {
     const caseNumber =
       document.getElementById("pbCaseNumber").value.trim() || "Case";
     const initials =
       document.getElementById("pbPathInitials").value.trim() || "Path";
     const workbook = XLSX.utils.book_new();
-    Object.keys(snapshots).forEach((label) => {
-      const ws = XLSX.utils.json_to_sheet(snapshots[label]);
+    Object.keys(snapshots_pb).forEach((label) => {
+      const ws = XLSX.utils.json_to_sheet(snapshots_pb[label]);
       XLSX.utils.book_append_sheet(workbook, ws, label);
     });
     const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
@@ -283,50 +285,45 @@
     saveAs(blob, `${caseNumber}_${initials}_pb.xlsx`);
   };
 
-  log.addEventListener("input", () => {
+  log_pb.addEventListener("input", () => {
     // Reset counts and history, but DO NOT clear the textbox!
-    cellTypes.forEach((type) => (cellCounts[type] = 0));
+    cellTypes_pb.forEach((type) => (cellCounts_pb[type] = 0));
     totalCount_PB = 0;
-    nrbcCount = 0;
-    history = [];
-    for (let char of log.value) {
+    nrbcCount_pb = 0;
+    history_pb = [];
+    for (let char of log_pb.value) {
       const keyNum = parseInt(char);
       if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
-        const idx = keyBindings[keyNum];
-        const type = cellTypes[idx];
-        cellCounts[type]++;
-        history.push(type);
+        const idx = keyBindings_pb[keyNum];
+        const type = cellTypes_pb[idx];
+        cellCounts_pb[type]++;
+        history_pb.push(type);
         if (type === "NRBCs") {
-          nrbcCount++;
+          nrbcCount_pb++;
         } else {
           totalCount_PB++;
         }
-        if (totalCount_PB % 50 === 0) snapshotCounts(totalCount_PB);
+        if (totalCount_PB % 50 === 0) snapshotCounts_pb(totalCount_PB);
       }
     }
-    updateDisplay();
-    saveState();
+    updateDisplay_pb();
+    saveState_pb();
 
-    log.addEventListener("input", () => {
-      // ...existing code...
-
-      // Only export if PB tab is active
-      const pbApp = document.getElementById("pbApp");
-      if (totalCount_PB === MAX_COUNT && pbApp.classList.contains("active")) {
-        chime.play();
-        pbExportExcel();
-      }
-    });
+    // Only export if PB tab is active
+    const pbApp = document.getElementById("pbApp");
+    if (totalCount_PB === MAX_COUNT_PB && pbApp.classList.contains("active")) {
+      chime_pb.play();
+    }
   });
 
-  const ctx = document.getElementById("pbChart").getContext("2d");
-  const chart = new Chart(ctx, {
+  const ctx_pb = document.getElementById("pbChart").getContext("2d");
+  const chart_pb = new Chart(ctx_pb, {
     type: "pie",
     data: {
-      labels: cellTypes,
+      labels: cellTypes_pb,
       datasets: [
         {
-          data: cellTypes.map((type) => cellCounts[type]),
+          data: cellTypes_pb.map((type) => cellCounts_pb[type]),
           backgroundColor: [
             "#00000",
             "#660202",
@@ -361,26 +358,28 @@
     },
   });
 
-  function updateChart() {
-    chart.data.datasets[0].data = cellTypes.map((type) => cellCounts[type]);
-    chart.update();
+  function updateChart_pb() {
+    chart_pb.data.datasets[0].data = cellTypes_pb.map(
+      (type) => cellCounts_pb[type]
+    );
+    chart_pb.update();
   }
 
   // Init
-  loadState();
-  updateDisplay();
-  createKeypad();
-  createRemapArea();
+  loadState_pb();
+  updateDisplay_pb();
+  createKeypad_pb();
+  createRemapArea_pb();
 
   document.addEventListener("keydown", (e) => {
-    if (document.activeElement === log) return;
+    if (document.activeElement === log_pb) return;
     if (e.key >= "0" && e.key <= "9") {
       const keyNum = parseInt(e.key);
-      const idx = keyBindings[keyNum];
-      if (typeof idx === "number") handleInput(idx);
+      const idx = keyBindings_pb[keyNum];
+      if (typeof idx === "number") handleInput_pb(idx);
     } else if (e.key === "Escape") {
       e.preventDefault();
-      pbUndoAll();
+      pbUndoAll_pb();
     }
   });
 })();

@@ -332,7 +332,7 @@
     saveState();
 
     const aspirateApp = document.getElementById("aspirateApp");
-    if (totalCount === MAX_COUNT && aspirateApp.classList.contains("active")) {
+    if (totalCount === 500 && aspirateApp.classList.contains("active")) {
       chime.play();
       aspirateExportExcel();
     }
