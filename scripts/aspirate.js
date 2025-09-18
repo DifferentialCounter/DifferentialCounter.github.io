@@ -268,7 +268,7 @@
   const lymphs = ((cellCounts["Lymphs"] / totalCount) * 100 || 0).toFixed(1);
   const plasma = ((cellCounts["Plasma"] / totalCount) * 100 || 0).toFixed(1);
   const others = ((cellCounts["Other"] / totalCount) * 100 || 0).toFixed(1);
-  const atypial = ((cellCounts["Atypical"] / totalCount) * 100 || 0).toFixed(1);
+  const atyp = ((cellCounts["Atypical"] / totalCount) * 100 || 0).toFixed(1);
   const nrbcs = ((cellCounts["NRBCs"] / totalCount) * 100 || 0).toFixed(1);
 
   // M:E ratio
@@ -291,7 +291,7 @@
   addRow("Lymphocytes", lymphs, "10 – 15%");
   addRow("Plasma Cells", plasma, "0 – 1%");
   addRow("Other", others, "0%");
-  addRow("Atypical", atypical, "0%");
+  addRow("Atypical", atyp, "0%");
   addRow("Erythroid Precursors", nrbcs, "15 – 27%");
   addRow("M:E Ratio", meRatio, "1.5 – 3.3");
 
