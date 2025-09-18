@@ -207,67 +207,98 @@
     });
   }
 
-  function updateDisplay() {
-    counterDisplay.innerHTML = "";
-    const displayOrder = [
-      "Blasts",
-      "Neuts and Precursors",
-      "Eos",
-      "Basos",
-      "Monos",
-      "Lymphs",
-      "Plasma",
-      "NRBCs",
-      "Atypical",
-      "Other",
-    ];
+ function updateDisplay() {
+  const counterDisplay = document.getElementById("aspirateDisplay");
+  counterDisplay.innerHTML = "";
 
-    displayOrder.forEach((type) => {
-      if (type === "Neuts and Precursors") {
-        const sum =
-          cellCounts["Neuts"] + cellCounts["Metas"] + cellCounts["Myelo"];
-        const percent =
-          totalCount > 0 ? ((sum / totalCount) * 100).toFixed(1) : "0.0";
-        const row = document.createElement("div");
-        row.innerHTML = `<span>${type}</span><span> - ${sum} (${percent}%)</span>`;
-        counterDisplay.appendChild(row);
+  // Build the table
+  const table = document.createElement("table");
+  table.style.borderCollapse = "collapse";
+  table.style.width = "100%";
+  table.style.marginTop = "10px";
 
-        const subRow = document.createElement("div");
-        subRow.style.fontSize = "0.95em";
-        subRow.style.marginLeft = "1em";
-        subRow.innerHTML = `
-            <span style="color:#4363d8;">Neuts: ${cellCounts["Neuts"]}</span>
-            <span style="margin-left:1em;color:#f58231;">Metas: ${cellCounts["Metas"]}</span>
-            <span style="margin-left:1em;color:#46f0f0;">Myelo: ${cellCounts["Myelo"]}</span>
-        `;
-        counterDisplay.appendChild(subRow);
-      } else {
-        const percent =
-          totalCount > 0
-            ? ((cellCounts[type] / totalCount) * 100).toFixed(1)
-            : "0.0";
-        const row = document.createElement("div");
-        row.innerHTML = `<span>${type}</span><span> - ${cellCounts[type]} (${percent}%)</span>`;
-        counterDisplay.appendChild(row);
-      }
-    });
+  // Header row
+  table.innerHTML = `
+    <tr>
+      <th style="border:1px solid #ccc; padding:6px;">Aspirate Smear (${totalCount} cells)</th>
+      <th style="border:1px solid #ccc; padding:6px;">Result</th>
+      <th style="border:1px solid #ccc; padding:6px;">Reference Range</th>
+    </tr>
+  `;
 
-    totalDisplay.textContent = `${totalCount} / ${MAX_COUNT}`;
-
-    const meNumerator =
-      cellCounts["Eos"] +
-      cellCounts["Basos"] +
-      cellCounts["Neuts"] +
-      cellCounts["Metas"] +
-      cellCounts["Myelo"];
-    const meRatio =
-      cellCounts["NRBCs"] > 0
-        ? (meNumerator / cellCounts["NRBCs"]).toFixed(2)
-        : "–";
-    ratioDisplay.textContent = meRatio;
-
-    updateChart();
+  // Helper to add a normal row
+  function addRow(label, percent, range) {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td style="border:1px solid #ccc; padding:6px;">${label}</td>
+      <td style="border:1px solid #ccc; padding:6px;">${percent}%</td>
+      <td style="border:1px solid #ccc; padding:6px;">${range}</td>
+    `;
+    table.appendChild(row);
   }
+
+  // Helper for expandable neutrophil row
+  function addExpandableNeutRow(totalPercent) {
+    const neutRow = document.createElement("tr");
+    neutRow.innerHTML = `
+      <td style="border:1px solid #ccc; padding:6px;">
+        <details>
+          <summary>Neutrophils & Precursors</summary>
+          <div style="font-size:0.9em; margin-top:4px; margin-left:12px;">
+            <div style="color:#4363d8;">Neuts: ${cellCounts["Neuts"]}</div>
+            <div style="color:#f58231;">Metas: ${cellCounts["Metas"]}</div>
+            <div style="color:#46f0f0;">Myelo: ${cellCounts["Myelo"]}</div>
+          </div>
+        </details>
+      </td>
+      <td style="border:1px solid #ccc; padding:6px;">${totalPercent}%</td>
+      <td style="border:1px solid #ccc; padding:6px;">33 – 63%</td>
+    `;
+    table.appendChild(neutRow);
+  }
+
+  // Calculate values
+  const blasts = ((cellCounts["Blasts"] / totalCount) * 100 || 0).toFixed(1);
+  const neutsPrecursorsCount =
+    cellCounts["Neuts"] + cellCounts["Metas"] + cellCounts["Myelo"];
+  const neutsPrecursors = ((neutsPrecursorsCount / totalCount) * 100 || 0).toFixed(1);
+  const eos = ((cellCounts["Eos"] / totalCount) * 100 || 0).toFixed(1);
+  const basos = ((cellCounts["Basos"] / totalCount) * 100 || 0).toFixed(1);
+  const monos = ((cellCounts["Monos"] / totalCount) * 100 || 0).toFixed(1);
+  const lymphs = ((cellCounts["Lymphs"] / totalCount) * 100 || 0).toFixed(1);
+  const plasma = ((cellCounts["Plasma"] / totalCount) * 100 || 0).toFixed(1);
+  const nrbcs = ((cellCounts["NRBCs"] / totalCount) * 100 || 0).toFixed(1);
+
+  // M:E ratio
+  const meNumerator =
+    cellCounts["Eos"] +
+    cellCounts["Basos"] +
+    cellCounts["Neuts"] +
+    cellCounts["Metas"] +
+    cellCounts["Myelo"];
+  const meRatio = cellCounts["NRBCs"] > 0
+    ? (meNumerator / cellCounts["NRBCs"]).toFixed(2)
+    : "–";
+
+  // Add rows
+  addRow("Blasts", blasts, "0 – 3%");
+  addExpandableNeutRow(neutsPrecursors);
+  addRow("Eosinophils & Precursors", eos, "1 – 5%");
+  addRow("Basophils & Precursors", basos, "0 – 1%");
+  addRow("Monocytes", monos, "0 – 2%");
+  addRow("Lymphocytes", lymphs, "10 – 15%");
+  addRow("Plasma Cells", plasma, "0 – 1%");
+  addRow("Erythroid Precursors", nrbcs, "15 – 27%");
+  addRow("M:E Ratio", meRatio, "1.5 – 3.3");
+
+  counterDisplay.appendChild(table);
+
+  // Update total and ratio at the top
+  document.getElementById("aspirateTotal").textContent = `${totalCount} / ${MAX_COUNT}`;
+  document.getElementById("aspirateRatio").textContent = meRatio;
+
+  updateChart();
+}
 
   function createRemapArea() {
     // Add new types if not present

@@ -161,36 +161,67 @@
     });
   }
 
-  function updateDisplay_pb() {
-    counterDisplay_pb.innerHTML = "";
-    const displayOrder = [
-      "Blasts",
-      "Promyelo",
-      "Myelo",
-      "Metas",
-      "Neuts",
-      "Lymphs",
-      "Monos",
-      "Eos",
-      "Basos",
-    ];
-    displayOrder.forEach((type) => {
-      const count = cellCounts_pb[type] || 0;
-      const percent =
-        totalCount_PB > 0 ? ((count / totalCount_PB) * 100).toFixed(1) : "0.0";
-      const row = document.createElement("div");
-      row.innerHTML = `<span>${type}</span><span> - ${count} (${percent}%)</span>`;
-      counterDisplay_pb.appendChild(row);
-    });
-    const nrbcRow = document.createElement("div");
-    nrbcRow.innerHTML = `<span>NRBCs</span><span> - ${nrbcCount_pb}</span>`;
-    counterDisplay_pb.appendChild(nrbcRow);
+ function updateDisplay_pb() {
+  counterDisplay_pb.innerHTML = "";
 
-    totalDisplay_pb.textContent = `${totalCount_PB} / ${MAX_COUNT_PB}`;
-    nrbcDisplay_pb.textContent = nrbcCount_pb;
+  // Build the table
+  const table = document.createElement("table");
+  table.style.borderCollapse = "collapse";
+  table.style.width = "100%";
+  table.style.marginTop = "10px";
 
-    updateChart_pb();
+  // Header row
+  table.innerHTML = `
+    <tr>
+      <th style="border:1px solid #ccc; padding:6px;">Peripheral Blood (${totalCount_PB} cells)</th>
+      <th style="border:1px solid #ccc; padding:6px;">Result</th>
+      <th style="border:1px solid #ccc; padding:6px;">Reference Range</th>
+    </tr>
+  `;
+
+  // Helper to add a normal row
+  function addRow(label, percent, range) {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td style="border:1px solid #ccc; padding:6px;">${label}</td>
+      <td style="border:1px solid #ccc; padding:6px;">${percent}%</td>
+      <td style="border:1px solid #ccc; padding:6px;">${range}</td>
+    `;
+    table.appendChild(row);
   }
+
+  // Calculate values
+  const blasts = ((cellCounts_pb["Blasts"] / totalCount_PB) * 100 || 0).toFixed(1);
+  const neuts = ((cellCounts_pb["Neuts"] / totalCount_PB) * 100 || 0).toFixed(1);
+  const metas = ((cellCounts_pb["Metas"] / totalCount_PB) * 100 || 0).toFixed(1);
+  const myelos = ((cellCounts_pb["Myelo"] / totalCount_PB) * 100 || 0).toFixed(1);
+  const promyelo = ((cellCounts_pb["Promyelo"] / totalCount_PB) * 100 || 0).toFixed(1);
+  const eos = ((cellCounts_pb["Eos"] / totalCount_PB) * 100 || 0).toFixed(1);
+  const basos = ((cellCounts_pb["Basos"] / totalCount_PB) * 100 || 0).toFixed(1);
+  const monos = ((cellCounts_pb["Monos"] / totalCount_PB) * 100 || 0).toFixed(1);
+  const lymphs = ((cellCounts_pb["Lymphs"] / totalCount_PB) * 100 || 0).toFixed(1);
+  const nrbcs = (cellCounts_pb["NRBCs"]/2).toFixed(1);
+
+  // Add rows
+  addRow("Blasts", blasts, "0%");
+  addRow("Promyelocytes", promyelo, "0%");
+  addRow("Myelocytes", myelos, "0%");
+  addRow("Metamyelocytes", metas, "0%");
+  addRow("Neutrophils", neuts, "34 – 73%");
+  addRow("Lymphocytes", lymphs, "15 – 50%");
+  addRow("Monocytes", monos, "1 – 15%");
+  addRow("Eosinophils", eos, "1 – 5%");
+  addRow("Basophils", basos, "0 – 1%");
+  addRow("NRBCs/100", nrbcs, "1.5 – 3.3");
+
+  counterDisplay_pb.appendChild(table);
+
+  // Update total at the top
+  totalDisplay_pb.textContent = `${totalCount_PB} / ${MAX_COUNT_PB}`;
+  nrbcDisplay_pb.textContent = nrbcCount_pb;
+
+  updateChart_pb();
+}
 
   function handleInput_pb(index) {
     const caseNumber = document
