@@ -28,7 +28,7 @@
   const clickSound = new Audio("media/click.wav");
   clickSound.volume = 0.75;
 
-  document.addEventListener("caseInfoReady", () => {
+  document.addEventListener("caseInfoReady", () =>  { 
     document.getElementById("aspirateCaseDisplay").textContent =
       window.caseInfo.caseNumber;
     document.getElementById("aspirateInitialsDisplay").textContent =
