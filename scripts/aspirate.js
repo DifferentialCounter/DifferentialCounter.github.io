@@ -395,31 +395,41 @@
     saveAs(blob, `${caseNumber}_${initials}.xlsx`);
   };
 
-  log.addEventListener("input", () => {
-    // Reset counts and history, but DO NOT clear the textbox!
-    cellTypes.forEach((type) => (cellCounts[type] = 0));
-    totalCount = 0;
-    history = [];
-    for (let char of log.value) {
-      const keyNum = parseInt(char);
-      if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
-        const idx = keyBindings[keyNum];
-        const type = cellTypes[idx];
-        cellCounts[type]++;
-        totalCount++;
-        history.push(type);
-        if (totalCount % 50 === 0) snapshotCounts(totalCount);
+log.addEventListener("input", () => {
+  // Reset counts and history, but DO NOT clear the textbox!
+  cellTypes.forEach((type) => (cellCounts[type] = 0));
+  totalCount = 0;
+  history = [];
+  let prevTotalCount = 0;
+  for (let char of log.value) {
+    const keyNum = parseInt(char);
+    if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
+      const idx = keyBindings[keyNum];
+      const type = cellTypes[idx];
+      cellCounts[type]++;
+      totalCount++;
+      history.push(type);
+
+      // Play click for each entry
+      playSound(clickSound);
+
+      // Play 100 cell chime when appropriate
+      if (totalCount % 100 === 0 && totalCount !== 0) {
+        playSound(beep);
       }
     }
-    updateDisplay();
-    saveState();
+  }
 
-    const aspirateApp = document.getElementById("aspirateApp");
-    if (totalCount === 500 && aspirateApp.classList.contains("active")) {
-      chime.play();
-      aspirateExportExcel();
-    }
-  });
+  updateDisplay();
+  saveState();
+
+  // Play final chime if max reached
+  if (totalCount === MAX_COUNT) {
+    playSound(chime);
+    aspirateExportExcel();
+    document.getElementById("aspirateOverrideContainer").style.display = "block";
+  }
+});
 
   const ctx = document.getElementById("aspirateChart").getContext("2d");
   const chart = new Chart(ctx, {

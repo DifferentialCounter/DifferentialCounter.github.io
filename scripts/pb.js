@@ -376,39 +376,48 @@
     saveAs(blob, `${caseNumber}_${initials}_pb.xlsx`);
   };
 
-  log_pb.addEventListener("input", () => {
-    // Reset counts and history, but DO NOT clear the textbox!
-    cellTypes_pb.forEach((type) => (cellCounts_pb[type] = 0));
-    totalCount_PB = 0;
-    nrbcCount_pb = 0;
-    history_pb = [];
-    for (let char of log_pb.value) {
-      const keyNum = parseInt(char);
-      if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
-        const idx = keyBindings_pb[keyNum];
-        const type = cellTypes_pb[idx];
-        cellCounts_pb[type]++;
-        history_pb.push(type);
-        if (type === "NRBCs") {
-          nrbcCount_pb++;
-        } else {
-          totalCount_PB++;
-        }
-        if (totalCount_PB % 50 === 0) snapshotCounts_pb(totalCount_PB);
-      }
-    }
-    updateDisplay_pb();
-    saveState_pb();
+log_pb.addEventListener("input", () => {
+  // Reset counts and history, but DO NOT clear the textbox!
+  cellTypes_pb.forEach((type) => (cellCounts_pb[type] = 0));
+  totalCount_PB = 0;
+  nrbcCount_pb = 0;
+  history_pb = [];
+  for (let char of log_pb.value) {
+    const keyNum = parseInt(char);
+    if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
+      const idx = keyBindings_pb[keyNum];
+      const type = cellTypes_pb[idx];
+      cellCounts_pb[type]++;
+      history_pb.push(type);
 
-    // Only export if PB tab is active
-    if (totalCount_PB === 200) {
-      const pbApp = document.getElementById("pbApp");
-      if (pbApp && pbApp.classList.contains("active")) {
-        chime_pb.play();
-        pbExportExcel_pb();
+      // NRBCs counted separately
+      if (type === "NRBCs") {
+        nrbcCount_pb++;
+      } else {
+        totalCount_PB++;
+        // Play click for each entry
+        playSound(clickSound_pb);
+
+        // Play 100 cell chime when appropriate
+        if (totalCount_PB % 100 === 0 && totalCount_PB !== 0) {
+          playSound(beep_pb);
+        }
       }
     }
-  });
+  }
+
+  updateDisplay_pb();
+  saveState_pb();
+
+  // Play final chime if max reached
+  if (totalCount_PB === MAX_COUNT_PB) {
+    const pbApp = document.getElementById("pbApp");
+    if (pbApp && pbApp.classList.contains("active")) {
+      playSound(chime_pb);
+      pbExportExcel_pb();
+    }
+  }
+});
 
   const ctx_pb = document.getElementById("pbChart").getContext("2d");
   const chart_pb = new Chart(ctx_pb, {
