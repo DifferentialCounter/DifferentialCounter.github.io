@@ -413,10 +413,12 @@ log.addEventListener("input", () => {
       // Play click for each entry
       playSound(clickSound);
 
-      // Play 100 cell chime when appropriate
-      if (totalCount % 100 === 0 && totalCount !== 0) {
+      // Play 100 cell chime only on transition to a new hundred
+      if (totalCount % 100 === 0 && totalCount !== 0 && prevTotalCount % 100 !== 0) {
         playSound(beep);
       }
+
+      prevTotalCount = totalCount;
     }
   }
 

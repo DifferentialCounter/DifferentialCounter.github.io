@@ -382,6 +382,7 @@ log_pb.addEventListener("input", () => {
   totalCount_PB = 0;
   nrbcCount_pb = 0;
   history_pb = [];
+  let prevTotalCount_PB = 0;
   for (let char of log_pb.value) {
     const keyNum = parseInt(char);
     if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
@@ -398,10 +399,16 @@ log_pb.addEventListener("input", () => {
         // Play click for each entry
         playSound(clickSound_pb);
 
-        // Play 100 cell chime when appropriate
-        if (totalCount_PB % 100 === 0 && totalCount_PB !== 0) {
+        // Play 100 cell chime only on transition to a new hundred
+        if (
+          totalCount_PB % 100 === 0 &&
+          totalCount_PB !== 0 &&
+          prevTotalCount_PB % 100 !== 0
+        ) {
           playSound(beep_pb);
         }
+
+        prevTotalCount_PB = totalCount_PB;
       }
     }
   }
