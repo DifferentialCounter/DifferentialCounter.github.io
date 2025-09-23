@@ -363,25 +363,32 @@
   };
 
   log_pb.addEventListener("input", () => {
-    const char = log_pb.value[log_pb.value.length - 1];
-    const keyNum = parseInt(char);
+    // Reset counts and history
+    cellTypes_pb.forEach((type) => (cellCounts_pb[type] = 0));
+    totalCount_PB = 0;
+    nrbcCount_pb = 0;
+    history_pb = [];
 
-    if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
-      const idx = keyBindings_pb[keyNum];
-      const type = cellTypes_pb[idx];
-      cellCounts_pb[type]++;
-      history_pb.push(type);
+    for (let char of log_pb.value) {
+      const keyNum = parseInt(char);
+      if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
+        const idx = keyBindings_pb[keyNum];
+        const type = cellTypes_pb[idx];
+        cellCounts_pb[type]++;
+        history_pb.push(type);
 
-      if (type === "NRBCs") {
-        nrbcCount_pb++;
-      } else {
-        totalCount_PB++;
-        if (totalCount_PB % 50 === 0) snapshotCounts_pb(totalCount_PB);
-
-        if (totalCount_PB % 100 === 0 && totalCount_PB !== 0) {
-          playSound(beep_pb);
+        if (type === "NRBCs") {
+          nrbcCount_pb++;
         } else {
-          playSound(clickSound_pb);
+          totalCount_PB++;
+
+          if (totalCount_PB % 50 === 0) snapshotCounts_pb(totalCount_PB);
+
+          if (totalCount_PB % 100 === 0 && totalCount_PB !== 0) {
+            playSound(beep_pb);
+          } else {
+            playSound(clickSound_pb);
+          }
         }
       }
     }

@@ -399,22 +399,27 @@
   };
 
   log.addEventListener("input", () => {
-    const char = log.value[log.value.length - 1];
-    const keyNum = parseInt(char);
+    // Reset counts and history
+    cellTypes.forEach((type) => (cellCounts[type] = 0));
+    totalCount = 0;
+    history = [];
 
-    if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
-      const idx = keyBindings[keyNum];
-      const type = cellTypes[idx];
-      cellCounts[type]++;
-      history.push(type);
-      totalCount++;
+    for (let char of log.value) {
+      const keyNum = parseInt(char);
+      if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
+        const idx = keyBindings[keyNum];
+        const type = cellTypes[idx];
+        cellCounts[type]++;
+        history.push(type);
+        totalCount++;
 
-      if (totalCount % 50 === 0) snapshotCounts(totalCount);
+        if (totalCount % 50 === 0) snapshotCounts(totalCount);
 
-      if (totalCount % 100 === 0 && totalCount !== 0) {
-        playSound(beep);
-      } else {
-        playSound(clickSound);
+        if (totalCount % 100 === 0 && totalCount !== 0) {
+          playSound(beep);
+        } else {
+          playSound(clickSound);
+        }
       }
     }
 
