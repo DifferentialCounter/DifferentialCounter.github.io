@@ -161,17 +161,17 @@
     });
   }
 
- function updateDisplay_pb() {
-  counterDisplay_pb.innerHTML = "";
+  function updateDisplay_pb() {
+    counterDisplay_pb.innerHTML = "";
 
-  // Build the table
-  const table = document.createElement("table");
-  table.style.borderCollapse = "collapse";
-  table.style.width = "100%";
-  table.style.marginTop = "10px";
+    // Build the table
+    const table = document.createElement("table");
+    table.style.borderCollapse = "collapse";
+    table.style.width = "100%";
+    table.style.marginTop = "10px";
 
-  // Header row
-  table.innerHTML = `
+    // Header row
+    table.innerHTML = `
     <tr>
       <th style="border:1px solid #ccc; padding:6px;">Peripheral Blood (${totalCount_PB} cells)</th>
       <th style="border:1px solid #ccc; padding:6px;">Result</th>
@@ -179,49 +179,65 @@
     </tr>
   `;
 
-  // Helper to add a normal row
-  function addRow(label, percent, range) {
-    const row = document.createElement("tr");
-    row.innerHTML = `
+    // Helper to add a normal row
+    function addRow(label, percent, range) {
+      const row = document.createElement("tr");
+      row.innerHTML = `
       <td style="border:1px solid #ccc; padding:6px;">${label}</td>
       <td style="border:1px solid #ccc; padding:6px;">${percent}%</td>
       <td style="border:1px solid #ccc; padding:6px;">${range}</td>
     `;
-    table.appendChild(row);
+      table.appendChild(row);
+    }
+
+    // Calculate values
+    const blasts = (
+      (cellCounts_pb["Blasts"] / totalCount_PB) * 100 || 0
+    ).toFixed(1);
+    const neuts = ((cellCounts_pb["Neuts"] / totalCount_PB) * 100 || 0).toFixed(
+      1
+    );
+    const metas = ((cellCounts_pb["Metas"] / totalCount_PB) * 100 || 0).toFixed(
+      1
+    );
+    const myelos = (
+      (cellCounts_pb["Myelo"] / totalCount_PB) * 100 || 0
+    ).toFixed(1);
+    const promyelo = (
+      (cellCounts_pb["Promyelo"] / totalCount_PB) * 100 || 0
+    ).toFixed(1);
+    const eos = ((cellCounts_pb["Eos"] / totalCount_PB) * 100 || 0).toFixed(1);
+    const basos = ((cellCounts_pb["Basos"] / totalCount_PB) * 100 || 0).toFixed(
+      1
+    );
+    const monos = ((cellCounts_pb["Monos"] / totalCount_PB) * 100 || 0).toFixed(
+      1
+    );
+    const lymphs = (
+      (cellCounts_pb["Lymphs"] / totalCount_PB) * 100 || 0
+    ).toFixed(1);
+    const nrbcs = (cellCounts_pb["NRBCs"] / 2).toFixed(1);
+
+    // Add rows
+    addRow("Blasts", blasts, "0%");
+    addRow("Promyelocytes", promyelo, "0%");
+    addRow("Myelocytes", myelos, "0%");
+    addRow("Metamyelocytes", metas, "0%");
+    addRow("Neutrophils", neuts, "34 – 73%");
+    addRow("Lymphocytes", lymphs, "15 – 50%");
+    addRow("Monocytes", monos, "1 – 15%");
+    addRow("Eosinophils", eos, "1 – 5%");
+    addRow("Basophils", basos, "0 – 1%");
+    addRow("NRBCs/100", nrbcs, "1.5 – 3.3");
+
+    counterDisplay_pb.appendChild(table);
+
+    // Update total at the top
+    totalDisplay_pb.textContent = `${totalCount_PB} / ${MAX_COUNT_PB}`;
+    nrbcDisplay_pb.textContent = nrbcCount_pb;
+
+    updateChart_pb();
   }
-
-  // Calculate values
-  const blasts = ((cellCounts_pb["Blasts"] / totalCount_PB) * 100 || 0).toFixed(1);
-  const neuts = ((cellCounts_pb["Neuts"] / totalCount_PB) * 100 || 0).toFixed(1);
-  const metas = ((cellCounts_pb["Metas"] / totalCount_PB) * 100 || 0).toFixed(1);
-  const myelos = ((cellCounts_pb["Myelo"] / totalCount_PB) * 100 || 0).toFixed(1);
-  const promyelo = ((cellCounts_pb["Promyelo"] / totalCount_PB) * 100 || 0).toFixed(1);
-  const eos = ((cellCounts_pb["Eos"] / totalCount_PB) * 100 || 0).toFixed(1);
-  const basos = ((cellCounts_pb["Basos"] / totalCount_PB) * 100 || 0).toFixed(1);
-  const monos = ((cellCounts_pb["Monos"] / totalCount_PB) * 100 || 0).toFixed(1);
-  const lymphs = ((cellCounts_pb["Lymphs"] / totalCount_PB) * 100 || 0).toFixed(1);
-  const nrbcs = (cellCounts_pb["NRBCs"]/2).toFixed(1);
-
-  // Add rows
-  addRow("Blasts", blasts, "0%");
-  addRow("Promyelocytes", promyelo, "0%");
-  addRow("Myelocytes", myelos, "0%");
-  addRow("Metamyelocytes", metas, "0%");
-  addRow("Neutrophils", neuts, "34 – 73%");
-  addRow("Lymphocytes", lymphs, "15 – 50%");
-  addRow("Monocytes", monos, "1 – 15%");
-  addRow("Eosinophils", eos, "1 – 5%");
-  addRow("Basophils", basos, "0 – 1%");
-  addRow("NRBCs/100", nrbcs, "1.5 – 3.3");
-
-  counterDisplay_pb.appendChild(table);
-
-  // Update total at the top
-  totalDisplay_pb.textContent = `${totalCount_PB} / ${MAX_COUNT_PB}`;
-  nrbcDisplay_pb.textContent = nrbcCount_pb;
-
-  updateChart_pb();
-}
 
   function handleInput_pb(index) {
     const caseNumber = document
@@ -376,55 +392,54 @@
     saveAs(blob, `${caseNumber}_${initials}_pb.xlsx`);
   };
 
-log_pb.addEventListener("input", () => {
-  // Reset counts and history, but DO NOT clear the textbox!
-  cellTypes_pb.forEach((type) => (cellCounts_pb[type] = 0));
-  totalCount_PB = 0;
-  nrbcCount_pb = 0;
-  history_pb = [];
-  let prevTotalCount_PB = 0;
-  for (let char of log_pb.value) {
-    const keyNum = parseInt(char);
-    if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
-      const idx = keyBindings_pb[keyNum];
-      const type = cellTypes_pb[idx];
-      cellCounts_pb[type]++;
-      history_pb.push(type);
+  log_pb.addEventListener("input", () => {
+    // Reset counts and history, but DO NOT clear the textbox!
+    cellTypes_pb.forEach((type) => (cellCounts_pb[type] = 0));
+    totalCount_PB = 0;
+    nrbcCount_pb = 0;
+    history_pb = [];
+    let prevTotalCount_PB = 0;
 
-      // NRBCs counted separately
-      if (type === "NRBCs") {
-        nrbcCount_pb++;
-      } else {
-        totalCount_PB++;
-        // Play click for each entry
-        playSound(clickSound_pb);
+    for (let char of log_pb.value) {
+      const keyNum = parseInt(char);
+      if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
+        const idx = keyBindings_pb[keyNum];
+        const type = cellTypes_pb[idx];
+        cellCounts_pb[type]++;
+        history_pb.push(type);
 
-        // // Play 100 cell chime only on transition to a new hundred
-        // if (
-        //   totalCount_PB % 100 === 0 &&
-        //   totalCount_PB !== 0 &&
-        //   prevTotalCount_PB % 100 !== 0
-        // ) {
-        //   playSound(beep_pb);
-        // }
+        if (type === "NRBCs") {
+          nrbcCount_pb++;
+        } else {
+          totalCount_PB++;
 
-        prevTotalCount_PB = totalCount_PB;
+          // Snapshot at multiples of 50
+          if (totalCount_PB % 50 === 0) {
+            snapshotCounts_pb(totalCount_PB);
+          }
+
+          // Play beep at multiples of 100
+          if (totalCount_PB % 100 === 0 && totalCount_PB !== 0) {
+            playSound(beep_pb);
+          } else {
+            playSound(clickSound_pb);
+          }
+        }
       }
     }
-  }
 
-  updateDisplay_pb();
-  saveState_pb();
+    updateDisplay_pb();
+    saveState_pb();
 
-  // Play final chime if max reached
-  if (totalCount_PB === MAX_COUNT_PB) {
-    const pbApp = document.getElementById("pbApp");
-    if (pbApp && pbApp.classList.contains("active")) {
-      playSound(chime_pb);
-      pbExportExcel_pb();
+    // Play final chime if max reached
+    if (totalCount_PB === MAX_COUNT_PB) {
+      const pbApp = document.getElementById("pbApp");
+      if (pbApp && pbApp.classList.contains("active")) {
+        playSound(chime_pb);
+        pbExportExcel_pb();
+      }
     }
-  }
-});
+  });
 
   const ctx_pb = document.getElementById("pbChart").getContext("2d");
   const chart_pb = new Chart(ctx_pb, {

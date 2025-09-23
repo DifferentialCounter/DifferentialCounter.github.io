@@ -28,7 +28,7 @@
   const clickSound = new Audio("media/click.wav");
   clickSound.volume = 0.75;
 
-  document.addEventListener("caseInfoReady", () =>  { 
+  document.addEventListener("caseInfoReady", () => {
     document.getElementById("aspirateCaseDisplay").textContent =
       window.caseInfo.caseNumber;
     document.getElementById("aspirateInitialsDisplay").textContent =
@@ -207,18 +207,18 @@
     });
   }
 
- function updateDisplay() {
-  const counterDisplay = document.getElementById("aspirateDisplay");
-  counterDisplay.innerHTML = "";
+  function updateDisplay() {
+    const counterDisplay = document.getElementById("aspirateDisplay");
+    counterDisplay.innerHTML = "";
 
-  // Build the table
-  const table = document.createElement("table");
-  table.style.borderCollapse = "collapse";
-  table.style.width = "100%";
-  table.style.marginTop = "10px";
+    // Build the table
+    const table = document.createElement("table");
+    table.style.borderCollapse = "collapse";
+    table.style.width = "100%";
+    table.style.marginTop = "10px";
 
-  // Header row
-  table.innerHTML = `
+    // Header row
+    table.innerHTML = `
     <tr>
       <th style="border:1px solid #ccc; padding:6px;">Aspirate Smear (${totalCount} cells)</th>
       <th style="border:1px solid #ccc; padding:6px;">Result</th>
@@ -226,21 +226,21 @@
     </tr>
   `;
 
-  // Helper to add a normal row
-  function addRow(label, percent, range) {
-    const row = document.createElement("tr");
-    row.innerHTML = `
+    // Helper to add a normal row
+    function addRow(label, percent, range) {
+      const row = document.createElement("tr");
+      row.innerHTML = `
       <td style="border:1px solid #ccc; padding:6px;">${label}</td>
       <td style="border:1px solid #ccc; padding:6px;">${percent}%</td>
       <td style="border:1px solid #ccc; padding:6px;">${range}</td>
     `;
-    table.appendChild(row);
-  }
+      table.appendChild(row);
+    }
 
-  // Helper for expandable neutrophil row
-  function addExpandableNeutRow(totalPercent) {
-    const neutRow = document.createElement("tr");
-    neutRow.innerHTML = `
+    // Helper for expandable neutrophil row
+    function addExpandableNeutRow(totalPercent) {
+      const neutRow = document.createElement("tr");
+      neutRow.innerHTML = `
       <td style="border:1px solid #ccc; padding:6px;">
         <details>
           <summary>Neutrophils & Precursors</summary>
@@ -254,55 +254,60 @@
       <td style="border:1px solid #ccc; padding:6px;">${totalPercent}%</td>
       <td style="border:1px solid #ccc; padding:6px;">33 – 63%</td>
     `;
-    table.appendChild(neutRow);
+      table.appendChild(neutRow);
+    }
+
+    // Calculate values
+    const blasts = ((cellCounts["Blasts"] / totalCount) * 100 || 0).toFixed(1);
+    const neutsPrecursorsCount =
+      cellCounts["Neuts"] + cellCounts["Metas"] + cellCounts["Myelo"];
+    const neutsPrecursors = (
+      (neutsPrecursorsCount / totalCount) * 100 || 0
+    ).toFixed(1);
+    const eos = ((cellCounts["Eos"] / totalCount) * 100 || 0).toFixed(1);
+    const basos = ((cellCounts["Basos"] / totalCount) * 100 || 0).toFixed(1);
+    const monos = ((cellCounts["Monos"] / totalCount) * 100 || 0).toFixed(1);
+    const lymphs = ((cellCounts["Lymphs"] / totalCount) * 100 || 0).toFixed(1);
+    const plasma = ((cellCounts["Plasma"] / totalCount) * 100 || 0).toFixed(1);
+    const others = ((cellCounts["Other"] / totalCount) * 100 || 0).toFixed(1);
+    const atyp = ((cellCounts["Atypical"] / totalCount) * 100 || 0).toFixed(1);
+    const nrbcs = ((cellCounts["NRBCs"] / totalCount) * 100 || 0).toFixed(1);
+
+    // M:E ratio
+    const meNumerator =
+      cellCounts["Eos"] +
+      cellCounts["Basos"] +
+      cellCounts["Neuts"] +
+      cellCounts["Metas"] +
+      cellCounts["Myelo"];
+    const meRatio =
+      cellCounts["NRBCs"] > 0
+        ? (meNumerator / cellCounts["NRBCs"]).toFixed(2)
+        : "–";
+
+    // Add rows
+    addRow("Blasts", blasts, "0 – 3%");
+    addExpandableNeutRow(neutsPrecursors);
+    addRow("Eosinophils & Precursors", eos, "1 – 5%");
+    addRow("Basophils & Precursors", basos, "0 – 1%");
+    addRow("Monocytes", monos, "0 – 2%");
+    addRow("Lymphocytes", lymphs, "10 – 15%");
+    addRow("Plasma Cells", plasma, "0 – 1%");
+    addRow("Other", others, "0%");
+    addRow("Atypical", atyp, "0%");
+    addRow("Erythroid Precursors", nrbcs, "15 – 27%");
+    addRow("M:E Ratio", meRatio, "1.5 – 3.3");
+
+    counterDisplay.appendChild(table);
+
+    // Update total and ratio at the top
+    document.getElementById(
+      "aspirateTotal"
+    ).textContent = `${totalCount} / ${MAX_COUNT}`;
+    document.getElementById("aspirateRatio").textContent = meRatio;
+
+    updateChart();
   }
-
-  // Calculate values
-  const blasts = ((cellCounts["Blasts"] / totalCount) * 100 || 0).toFixed(1);
-  const neutsPrecursorsCount =
-    cellCounts["Neuts"] + cellCounts["Metas"] + cellCounts["Myelo"];
-  const neutsPrecursors = ((neutsPrecursorsCount / totalCount) * 100 || 0).toFixed(1);
-  const eos = ((cellCounts["Eos"] / totalCount) * 100 || 0).toFixed(1);
-  const basos = ((cellCounts["Basos"] / totalCount) * 100 || 0).toFixed(1);
-  const monos = ((cellCounts["Monos"] / totalCount) * 100 || 0).toFixed(1);
-  const lymphs = ((cellCounts["Lymphs"] / totalCount) * 100 || 0).toFixed(1);
-  const plasma = ((cellCounts["Plasma"] / totalCount) * 100 || 0).toFixed(1);
-  const others = ((cellCounts["Other"] / totalCount) * 100 || 0).toFixed(1);
-  const atyp = ((cellCounts["Atypical"] / totalCount) * 100 || 0).toFixed(1);
-  const nrbcs = ((cellCounts["NRBCs"] / totalCount) * 100 || 0).toFixed(1);
-
-  // M:E ratio
-  const meNumerator =
-    cellCounts["Eos"] +
-    cellCounts["Basos"] +
-    cellCounts["Neuts"] +
-    cellCounts["Metas"] +
-    cellCounts["Myelo"];
-  const meRatio = cellCounts["NRBCs"] > 0
-    ? (meNumerator / cellCounts["NRBCs"]).toFixed(2)
-    : "–";
-
-  // Add rows
-  addRow("Blasts", blasts, "0 – 3%");
-  addExpandableNeutRow(neutsPrecursors);
-  addRow("Eosinophils & Precursors", eos, "1 – 5%");
-  addRow("Basophils & Precursors", basos, "0 – 1%");
-  addRow("Monocytes", monos, "0 – 2%");
-  addRow("Lymphocytes", lymphs, "10 – 15%");
-  addRow("Plasma Cells", plasma, "0 – 1%");
-  addRow("Other", others, "0%");
-  addRow("Atypical", atyp, "0%");
-  addRow("Erythroid Precursors", nrbcs, "15 – 27%");
-  addRow("M:E Ratio", meRatio, "1.5 – 3.3");
-
-  counterDisplay.appendChild(table);
-
-  // Update total and ratio at the top
-  document.getElementById("aspirateTotal").textContent = `${totalCount} / ${MAX_COUNT}`;
-  document.getElementById("aspirateRatio").textContent = meRatio;
-
-  updateChart();
-}
 
   function createRemapArea() {
     // Add new types if not present
@@ -395,43 +400,44 @@
     saveAs(blob, `${caseNumber}_${initials}.xlsx`);
   };
 
-log.addEventListener("input", () => {
-  // Reset counts and history, but DO NOT clear the textbox!
-  cellTypes.forEach((type) => (cellCounts[type] = 0));
-  totalCount = 0;
-  history = [];
-  let prevTotalCount = 0;
-  for (let char of log.value) {
-    const keyNum = parseInt(char);
-    if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
-      const idx = keyBindings[keyNum];
-      const type = cellTypes[idx];
-      cellCounts[type]++;
-      totalCount++;
-      history.push(type);
+  log.addEventListener("input", () => {
+    // Reset counts and history, but DO NOT clear the textbox!
+    cellTypes.forEach((type) => (cellCounts[type] = 0));
+    totalCount = 0;
+    history = [];
+    
+    for (let char of log.value) {
+      const keyNum = parseInt(char);
+      if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
+        const idx = keyBindings[keyNum];
+        const type = cellTypes[idx];
+        cellCounts[type]++;
+        totalCount++;
+        history.push(type);
 
-      // Play click for each entry
-      playSound(clickSound);
+        if (totalCount % 50 === 0) {
+          snapshotCounts(totalCount);
+        }
 
-      // // Play 100 cell chime only on transition to a new hundred
-      // if (totalCount % 100 === 0 && totalCount !== 0 && prevTotalCount % 100 !== 0) {
-      //   playSound(beep);
-      // }
-
-      // prevTotalCount = totalCount;
+        if (totalCount % 100 === 0 && totalCount !== 0) {
+          playSound(beep);
+        } else {
+          playSound(clickSound);
+        }
+      }
     }
-  }
 
-  updateDisplay();
-  saveState();
+    updateDisplay();
+    saveState();
 
-  // Play final chime if max reached
-  if (totalCount === MAX_COUNT) {
-    playSound(chime);
-    aspirateExportExcel();
-    document.getElementById("aspirateOverrideContainer").style.display = "block";
-  }
-});
+    // Play final chime if max reached
+    if (totalCount === MAX_COUNT) {
+      playSound(chime);
+      aspirateExportExcel();
+      document.getElementById("aspirateOverrideContainer").style.display =
+        "block";
+    }
+  });
 
   const ctx = document.getElementById("aspirateChart").getContext("2d");
   const chart = new Chart(ctx, {
