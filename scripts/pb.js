@@ -53,6 +53,7 @@
   let history_pb = [];
   const snapshots_pb = {};
   const MAX_COUNT_PB = 200;
+  let lastBeepedHundred_pb = 0;
 
   cellTypes_pb.forEach((type) => (cellCounts_pb[type] = 0));
 
@@ -384,8 +385,12 @@
 
           if (totalCount_PB % 50 === 0) snapshotCounts_pb(totalCount_PB);
 
-          if (totalCount_PB % 100 === 0 && totalCount_PB !== 0) {
+          if (
+            Math.floor(totalCount_PB / 100) > lastBeepedHundred_pb &&
+            totalCount_PB !== 0
+          ) {
             playSound(beep_pb);
+            lastBeepedHundred_pb = Math.floor(totalCount_PB / 100);
           } else {
             playSound(clickSound_pb);
           }

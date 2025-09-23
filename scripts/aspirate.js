@@ -56,6 +56,8 @@
   const snapshots = {};
   const MAX_COUNT = 500;
 
+  let lastBeepedHundred = 0;
+
   cellTypes.forEach((type) => (cellCounts[type] = 0));
 
   const keypad = document.getElementById("aspirateKeypad");
@@ -415,8 +417,12 @@
 
         if (totalCount % 50 === 0) snapshotCounts(totalCount);
 
-        if (totalCount % 100 === 0 && totalCount !== 0) {
+        if (
+          Math.floor(totalCount / 100) > lastBeepedHundred &&
+          totalCount !== 0
+        ) {
           playSound(beep);
+          lastBeepedHundred = Math.floor(totalCount / 100);
         } else {
           playSound(clickSound);
         }
