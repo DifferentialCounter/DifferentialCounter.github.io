@@ -405,20 +405,23 @@
     cellTypes.forEach((type) => (cellCounts[type] = 0));
     totalCount = 0;
     history = [];
-    
+
     for (let char of log.value) {
       const keyNum = parseInt(char);
       if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
         const idx = keyBindings[keyNum];
         const type = cellTypes[idx];
         cellCounts[type]++;
-        totalCount++;
         history.push(type);
 
+        totalCount++;
+
+        // Snapshot at multiples of 50
         if (totalCount % 50 === 0) {
           snapshotCounts(totalCount);
         }
 
+        // Play beep at multiples of 100
         if (totalCount % 100 === 0 && totalCount !== 0) {
           playSound(beep);
         } else {
@@ -432,10 +435,11 @@
 
     // Play final chime if max reached
     if (totalCount === MAX_COUNT) {
-      playSound(chime);
-      aspirateExportExcel();
-      document.getElementById("aspirateOverrideContainer").style.display =
-        "block";
+      const aspirateApp = document.getElementById("aspirateApp");
+      if (aspirateApp && aspirateApp.classList.contains("active")) {
+        playSound(chime);
+        aspirateExportExcel();
+      }
     }
   });
 

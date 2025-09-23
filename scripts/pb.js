@@ -393,37 +393,28 @@
   };
 
   log_pb.addEventListener("input", () => {
-    // Reset counts and history, but DO NOT clear the textbox!
-    cellTypes_pb.forEach((type) => (cellCounts_pb[type] = 0));
-    totalCount_PB = 0;
-    nrbcCount_pb = 0;
-    history_pb = [];
-    let prevTotalCount_PB = 0;
+    // Only process the latest character
+    const char = log_pb.value[log_pb.value.length - 1];
+    const keyNum = parseInt(char);
+    if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
+      const idx = keyBindings_pb[keyNum];
+      const type = cellTypes_pb[idx];
+      cellCounts_pb[type]++;
+      history_pb.push(type);
 
-    for (let char of log_pb.value) {
-      const keyNum = parseInt(char);
-      if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
-        const idx = keyBindings_pb[keyNum];
-        const type = cellTypes_pb[idx];
-        cellCounts_pb[type]++;
-        history_pb.push(type);
+      if (type === "NRBCs") {
+        nrbcCount_pb++;
+      } else {
+        totalCount_PB++;
 
-        if (type === "NRBCs") {
-          nrbcCount_pb++;
+        if (totalCount_PB % 50 === 0) {
+          snapshotCounts_pb(totalCount_PB);
+        }
+
+        if (totalCount_PB % 100 === 0 && totalCount_PB !== 0) {
+          playSound(beep_pb);
         } else {
-          totalCount_PB++;
-
-          // Snapshot at multiples of 50
-          if (totalCount_PB % 50 === 0) {
-            snapshotCounts_pb(totalCount_PB);
-          }
-
-          // Play beep at multiples of 100
-          if (totalCount_PB % 100 === 0 && totalCount_PB !== 0) {
-            playSound(beep_pb);
-          } else {
-            playSound(clickSound_pb);
-          }
+          playSound(clickSound_pb);
         }
       }
     }
@@ -431,7 +422,6 @@
     updateDisplay_pb();
     saveState_pb();
 
-    // Play final chime if max reached
     if (totalCount_PB === MAX_COUNT_PB) {
       const pbApp = document.getElementById("pbApp");
       if (pbApp && pbApp.classList.contains("active")) {
