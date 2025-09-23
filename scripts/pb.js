@@ -399,14 +399,14 @@ log_pb.addEventListener("input", () => {
         // Play click for each entry
         playSound(clickSound_pb);
 
-        // Play 100 cell chime only on transition to a new hundred
-        if (
-          totalCount_PB % 100 === 0 &&
-          totalCount_PB !== 0 &&
-          prevTotalCount_PB % 100 !== 0
-        ) {
-          playSound(beep_pb);
-        }
+        // // Play 100 cell chime only on transition to a new hundred
+        // if (
+        //   totalCount_PB % 100 === 0 &&
+        //   totalCount_PB !== 0 &&
+        //   prevTotalCount_PB % 100 !== 0
+        // ) {
+        //   playSound(beep_pb);
+        // }
 
         prevTotalCount_PB = totalCount_PB;
       }
