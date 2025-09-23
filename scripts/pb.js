@@ -240,53 +240,23 @@
   }
 
   function handleInput_pb(index) {
-    const caseNumber = document
-      .getElementById("aspirateCaseNumber")
-      ?.value.trim();
-    const initials = document
-      .getElementById("aspiratePathInitials")
-      ?.value.trim();
-
-    if (!caseNumber || !initials) {
-      if (!caseNumber) {
-        document.getElementById("pbCaseNumber").style.border = "2px solid red";
-      }
-      if (!initials) {
-        document.getElementById("pbPathInitials").style.border =
-          "2px solid red";
-      }
-      alert(
-        "Please enter both the case number and pathologist initials before starting."
-      );
-      return;
-    }
-
-    document.getElementById("pbCaseNumber").style.border = "";
-    document.getElementById("pbPathInitials").style.border = "";
-
     const type = cellTypes_pb[index];
     cellCounts_pb[type]++;
     history_pb.push(type);
+
     if (type === "NRBCs") {
       nrbcCount_pb++;
     } else {
       totalCount_PB++;
-    }
+      if (totalCount_PB % 50 === 0) snapshotCounts_pb(totalCount_PB);
 
-    clickSound_pb.pause();
-    clickSound_pb.currentTime = 0;
-    clickSound_pb.play();
-
-    if (totalCount_PB % 50 === 0) snapshotCounts_pb(totalCount_PB);
-
-    if (totalCount_PB === MAX_COUNT_PB) {
-      const pbApp = document.getElementById("pbApp");
-      if (pbApp && pbApp.classList.contains("active")) {
-        playSound(chime_pb);
-        pbExportExcel_pb();
+      if (totalCount_PB === MAX_COUNT_PB) {
+        const pbApp = document.getElementById("pbApp");
+        if (pbApp && pbApp.classList.contains("active")) {
+          playSound(chime_pb);
+          pbExportExcel_pb();
+        }
       }
-    } else if (totalCount_PB % 100 === 0) {
-      playSound(beep_pb);
     }
 
     updateDisplay_pb();
@@ -393,9 +363,9 @@
   };
 
   log_pb.addEventListener("input", () => {
-    // Only process the latest character
     const char = log_pb.value[log_pb.value.length - 1];
     const keyNum = parseInt(char);
+
     if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
       const idx = keyBindings_pb[keyNum];
       const type = cellTypes_pb[idx];
@@ -406,10 +376,7 @@
         nrbcCount_pb++;
       } else {
         totalCount_PB++;
-
-        if (totalCount_PB % 50 === 0) {
-          snapshotCounts_pb(totalCount_PB);
-        }
+        if (totalCount_PB % 50 === 0) snapshotCounts_pb(totalCount_PB);
 
         if (totalCount_PB % 100 === 0 && totalCount_PB !== 0) {
           playSound(beep_pb);

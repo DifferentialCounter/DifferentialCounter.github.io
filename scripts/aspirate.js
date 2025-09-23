@@ -105,8 +105,8 @@
     const type = cellTypes[index];
     cellCounts[type]++;
     totalCount++;
-    playSound(clickSound);
     history.push(type);
+
     if (totalCount % 50 === 0) snapshotCounts(totalCount);
 
     updateDisplay();
@@ -124,8 +124,6 @@
         "block";
     } else if (totalCount > MAX_COUNT && !allowOverLimit) {
       return; // prevent over-limit count
-    } else if (totalCount % 100 === 0) {
-      playSound(beep);
     }
   }
 
@@ -401,39 +399,28 @@
   };
 
   log.addEventListener("input", () => {
-    // Reset counts and history, but DO NOT clear the textbox!
-    cellTypes.forEach((type) => (cellCounts[type] = 0));
-    totalCount = 0;
-    history = [];
+    const char = log.value[log.value.length - 1];
+    const keyNum = parseInt(char);
 
-    for (let char of log.value) {
-      const keyNum = parseInt(char);
-      if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
-        const idx = keyBindings[keyNum];
-        const type = cellTypes[idx];
-        cellCounts[type]++;
-        history.push(type);
+    if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
+      const idx = keyBindings[keyNum];
+      const type = cellTypes[idx];
+      cellCounts[type]++;
+      history.push(type);
+      totalCount++;
 
-        totalCount++;
+      if (totalCount % 50 === 0) snapshotCounts(totalCount);
 
-        // Snapshot at multiples of 50
-        if (totalCount % 50 === 0) {
-          snapshotCounts(totalCount);
-        }
-
-        // Play beep at multiples of 100
-        if (totalCount % 100 === 0 && totalCount !== 0) {
-          playSound(beep);
-        } else {
-          playSound(clickSound);
-        }
+      if (totalCount % 100 === 0 && totalCount !== 0) {
+        playSound(beep);
+      } else {
+        playSound(clickSound);
       }
     }
 
     updateDisplay();
     saveState();
 
-    // Play final chime if max reached
     if (totalCount === MAX_COUNT) {
       const aspirateApp = document.getElementById("aspirateApp");
       if (aspirateApp && aspirateApp.classList.contains("active")) {
