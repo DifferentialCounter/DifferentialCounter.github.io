@@ -15,6 +15,7 @@
     <div><strong>Total (excluding NRBCs):</strong> <span id="pbTotal">0 / 200</span></div>
     <div><strong>NRBCs counted separately:</strong> <span id="pbNRBC">0</span></div>
     <button onclick="pbUndoAll_pb()">Undo All</button>
+    <button onclick="pbExportExcel_pb()">Export Case to Excel</button>
     <textarea id="pbLog"></textarea>
     <div id="pbChartContainer">
       <canvas id="pbChart"></canvas>
@@ -254,7 +255,8 @@
         const pbApp = document.getElementById("pbApp");
         if (pbApp && pbApp.classList.contains("active")) {
           playSound(chime_pb);
-          pbExportExcel_pb();
+          // exporter is intentionally a no-op in this build
+          if (typeof window.pbExportExcel_pb === 'function') window.pbExportExcel_pb();
         }
       }
     }
@@ -307,173 +309,172 @@
     }
 
     document
-304|       .getElementById("pbCaseNumber")
-305|       .addEventListener("input", function () {
-306|         this.style.border = "";
-307|       });
-308|     document
-309|       .getElementById("pbPathInitials")
-310|       .addEventListener("input", function () {
-311|         this.style.border = "";
-312|       });
+      .getElementById("pbCaseNumber")
+      .addEventListener("input", function () {
+        this.style.border = "";
+      });
+    document
+      .getElementById("pbPathInitials")
+      .addEventListener("input", function () {
+        this.style.border = "";
+      });
 
-313|     // Highlight unassigned cell types
-314|     const assignedIndexes = new Set(keyBindings_pb);
-315|     const unassigned = cellTypes_pb.filter(
-316|       (_, idx) => !assignedIndexes.has(idx)
-317|     );
-318|     const highlightDiv = document.getElementById("pbUnassignedHighlight");
-319|     if (unassigned.length > 0) {
-320|       highlightDiv.innerHTML =
-321|         `<strong style="color:red;">Unassigned cell types:</strong> ` +
-322|         unassigned
-323|           .map(
-324|             (type) =>
-325|               `<span style="background: #ffe0e0; color: #b30000; padding: 2px 8px; border-radius: 4px; margin-right: 4px;">${type}</span>`
-326|           )
-327|           .join("");
-328|     } else {
-329|       highlightDiv.innerHTML = `<span style="color:green;">All cell types assigned.</span>`;
-330|     }
-331|   }
+    // Highlight unassigned cell types
+    const assignedIndexes = new Set(keyBindings_pb);
+    const unassigned = cellTypes_pb.filter(
+      (_, idx) => !assignedIndexes.has(idx)
+    );
+    const highlightDiv = document.getElementById("pbUnassignedHighlight");
+    if (unassigned.length > 0) {
+      highlightDiv.innerHTML =
+        `<strong style="color:red;">Unassigned cell types:</strong> ` +
+        unassigned
+          .map(
+            (type) =>
+              `<span style="background: #ffe0e0; color: #b30000; padding: 2px 8px; border-radius: 4px; margin-right: 4px;">${type}</span>`
+          )
+          .join("");
+    } else {
+      highlightDiv.innerHTML = `<span style="color:green;">All cell types assigned.</span>`;
+    }
+  }
 
-332|   window.pbUndoAll_pb = function () {
-333|     for (let type in cellCounts_pb) cellCounts_pb[type] = 0;
-334|     history_pb = [];
-335|     totalCount_PB = 0;
-336|     nrbcCount_pb = 0;
-337|     log_pb.value = "";
-338|     document.getElementById("pbCaseNumber").value = "";
-339|     document.getElementById("pbPathInitials").value = "";
-340|     updateDisplay_pb();
-341|     saveState_pb();
-342|   };
+  window.pbUndoAll_pb = function () {
+    for (let type in cellCounts_pb) cellCounts_pb[type] = 0;
+    history_pb = [];
+    totalCount_PB = 0;
+    nrbcCount_pb = 0;
+    log_pb.value = "";
+    document.getElementById("pbCaseNumber").value = "";
+    document.getElementById("pbPathInitials").value = "";
+    updateDisplay_pb();
+    saveState_pb();
+  };
 
-343|   // Export replaced with a safe no-op
-344|   window.pbExportExcel_pb = function () {
-345|     console.warn("pbExportExcel_pb() called but export is disabled.");
-346|   };
+  // Export replaced with a safe no-op (no automatic download)
+  window.pbExportExcel_pb = function () {
+    console.warn("pbExportExcel_pb() called but export is disabled.");
+  };
 
-347|   log_pb.addEventListener("input", () => {
-348|     // Reset counts and history
-349|     cellTypes_pb.forEach((type) => (cellCounts_pb[type] = 0));
-350|     totalCount_PB = 0;
-351|     nrbcCount_pb = 0;
-352|     history_pb = [];
+  log_pb.addEventListener("input", () => {
+    // Reset counts and history
+    cellTypes_pb.forEach((type) => (cellCounts_pb[type] = 0));
+    totalCount_PB = 0;
+    nrbcCount_pb = 0;
+    history_pb = [];
 
-353|     for (let char of log_pb.value) {
-354|       const keyNum = parseInt(char);
-355|       if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
-356|         const idx = keyBindings_pb[keyNum];
-357|         const type = cellTypes_pb[idx];
-358|         cellCounts_pb[type]++;
-359|         history_pb.push(type);
+    for (let char of log_pb.value) {
+      const keyNum = parseInt(char);
+      if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
+        const idx = keyBindings_pb[keyNum];
+        const type = cellTypes_pb[idx];
+        cellCounts_pb[type]++;
+        history_pb.push(type);
 
-360|         if (type === "NRBCs") {
-361|           nrbcCount_pb++;
-362|         } else {
-363|           totalCount_PB++;
+        if (type === "NRBCs") {
+          nrbcCount_pb++;
+        } else {
+          totalCount_PB++;
 
-364|           if (totalCount_PB % 50 === 0) snapshotCounts_pb(totalCount_PB);
+          if (totalCount_PB % 50 === 0) snapshotCounts_pb(totalCount_PB);
 
-365|           if (
-366|             Math.floor(totalCount_PB / 100) > lastBeepedHundred_pb &&
-367|             totalCount_PB !== 0
-368|           ) {
-369|             playSound(beep_pb);
-370|             lastBeepedHundred_pb = Math.floor(totalCount_PB / 100);
-371|           } else {
-372|             playSound(clickSound_pb);
-373|           }
-374|         }
-375|       }
-376|     }
+          if (
+            Math.floor(totalCount_PB / 100) > lastBeepedHundred_pb &&
+            totalCount_PB !== 0
+          ) {
+            playSound(beep_pb);
+            lastBeepedHundred_pb = Math.floor(totalCount_PB / 100);
+          } else {
+            playSound(clickSound_pb);
+          }
+        }
+      }
+    }
 
-377|     updateDisplay_pb();
-378|     saveState_pb();
+    updateDisplay_pb();
+    saveState_pb();
 
-379|     if (totalCount_PB === MAX_COUNT_PB) {
-380|       const pbApp = document.getElementById("pbApp");
-381|       if (pbApp && pbApp.classList.contains("active")) {
-382|         playSound(chime_pb);
-383|         // call to exporter is now no-op
-384|         if (typeof window.pbExportExcel_pb === 'function') window.pbExportExcel_pb();
-385|       }
-386|     }
-387|   });
+    if (totalCount_PB === MAX_COUNT_PB) {
+      const pbApp = document.getElementById("pbApp");
+      if (pbApp && pbApp.classList.contains("active")) {
+        playSound(chime_pb);
+        if (typeof window.pbExportExcel_pb === 'function') window.pbExportExcel_pb();
+      }
+    }
+  });
 
-388|   const ctx_pb = document.getElementById("pbChart").getContext("2d");
-389|   const chart_pb = new Chart(ctx_pb, {
-390|     type: "pie",
-391|     data: {
-392|       labels: cellTypes_pb,
-393|       datasets: [
-394|         {
-395|           data: cellTypes_pb.map((type) => cellCounts_pb[type]),
-396|           backgroundColor: [
-397|             "#00000",
-398|             "#660202",
-399|             "#e6194b",
-400|             "#911eb4",
-401|             "#f58231",
-402|             "#4363d8",
-403|             "#46f0f0",
-404|             "#f032e6",
-405|             "#bcf60c",
-406|             "#fabebe",
-407|           ],
-408|         },
-409|       ],
-410|     },
-411|     options: {
-412|       plugins: {
-413|         legend: { position: "right" },
-414|         tooltip: {
-415|           callbacks: {
-416|             label: function (context) {
-417|               const total = context.dataset.data.reduce((a, b) => a + b, 0);
-418|               const value = context.raw;
-419|               const percent =
-420|                 total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-421|               return `${context.label}: ${value} (${percent}%)`;
-422|             },
-423|           },
-424|         },
-425|         title: { display: true, text: "Cell Distribution" },
-426|       },
-427|     },
-428|   });
+  const ctx_pb = document.getElementById("pbChart").getContext("2d");
+  const chart_pb = new Chart(ctx_pb, {
+    type: "pie",
+    data: {
+      labels: cellTypes_pb,
+      datasets: [
+        {
+          data: cellTypes_pb.map((type) => cellCounts_pb[type]),
+          backgroundColor: [
+            "#00000",
+            "#660202",
+            "#e6194b",
+            "#911eb4",
+            "#f58231",
+            "#4363d8",
+            "#46f0f0",
+            "#f032e6",
+            "#bcf60c",
+            "#fabebe",
+          ],
+        },
+      ],
+    },
+    options: {
+      plugins: {
+        legend: { position: "right" },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const value = context.raw;
+              const percent =
+                total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+              return `${context.label}: ${value} (${percent}%)`;
+            },
+          },
+        },
+        title: { display: true, text: "Cell Distribution" },
+      },
+    },
+  });
 
-429|   function updateChart_pb() {
-430|     chart_pb.data.datasets[0].data = cellTypes_pb.map(
-431|       (type) => cellCounts_pb[type]
-432|     );
-433|     chart_pb.update();
-434|   }
+  function updateChart_pb() {
+    chart_pb.data.datasets[0].data = cellTypes_pb.map(
+      (type) => cellCounts_pb[type]
+    );
+    chart_pb.update();
+  }
 
-435|   // Init
-436|   loadState_pb();
-437|   updateDisplay_pb();
-438|   createKeypad_pb();
-439|   createRemapArea_pb();
+  // Init
+  loadState_pb();
+  updateDisplay_pb();
+  createKeypad_pb();
+  createRemapArea_pb();
 
-440|   document.addEventListener("keydown", (e) => {
-441|     if (document.activeElement === log_pb) return;
-442| 
-443|     const caseNumber = document.getElementById("pbCaseNumber").value.trim();
-444|     const initials = document.getElementById("pbPathInitials").value.trim();
-445|     if (!caseNumber || !initials) return;
-446| 
-447|     const pbApp = document.getElementById("pbApp");
-448|     if (!pbApp || !pbApp.classList.contains("active")) return;
-449| 
-450|     if (e.key >= "0" && e.key <= "9") {
-451|       const keyNum = parseInt(e.key);
-452|       const idx = keyBindings_pb[keyNum];
-453|       if (typeof idx === "number") handleInput_pb(idx);
-454|     } else if (e.key === "Escape") {
-455|       e.preventDefault();
-456|       pbUndoAll_pb();
-457|     }
-458|   });
-459| })();
+  document.addEventListener("keydown", (e) => {
+    if (document.activeElement === log_pb) return;
+
+    const caseNumber = document.getElementById("pbCaseNumber").value.trim();
+    const initials = document.getElementById("pbPathInitials").value.trim();
+    if (!caseNumber || !initials) return;
+
+    const pbApp = document.getElementById("pbApp");
+    if (!pbApp || !pbApp.classList.contains("active")) return;
+
+    if (e.key >= "0" && e.key <= "9") {
+      const keyNum = parseInt(e.key);
+      const idx = keyBindings_pb[keyNum];
+      if (typeof idx === "number") handleInput_pb(idx);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      pbUndoAll_pb();
+    }
+  });
+})();
