@@ -8,6 +8,10 @@
     blasts_moderate_pct: 5, // blasts >=5% -> orange
     me_low: 1.5, // default lower bound
     me_high: 3.3, // default upper bound
+    plasma_myeloma_pct: 60, // IMWG biomarker threshold
+    plasma_suspicious_pct: 10,
+    lymph_high_pct: 50,
+    atypical_suspicious_count: 5,
   };
 
   // Simple helper to compute percentages defensively
@@ -76,6 +80,56 @@
           refs: [],
         });
       }
+    }
+
+    // Plasma cell / myeloma-related flags
+    const plasmaPct = pct(counts['Plasma'] || 0, total);
+    if (plasmaPct >= defaults.plasma_myeloma_pct) {
+      flags.push({
+        id: 'plasma_myeloma_biomarker',
+        severity: 'red',
+        title: 'High marrow plasma cells (possible myeloma biomarker)',
+        message: `Plasma cells ${plasmaPct.toFixed(1)}% — meets myeloma biomarker threshold (>=${defaults.plasma_myeloma_pct}%) used in consensus criteria; consider urgent hematopathology/hematology evaluation and confirmatory testing (bone marrow biopsy with clonality assessment, serum/urine protein studies, free light chains, imaging).`,
+        evidence: { plasmaPct: plasmaPct.toFixed(1) },
+        refs: [
+          { title: 'IMWG diagnostic criteria (guidance)', url: 'https://www.myeloma.org' },
+        ],
+      });
+    } else if (plasmaPct >= defaults.plasma_suspicious_pct) {
+      flags.push({
+        id: 'plasma_suspicious',
+        severity: 'orange',
+        title: 'Increased plasma cells (suspicious)',
+        message: `Plasma cells ${plasmaPct.toFixed(1)}% — increased plasma cells in marrow aspirate; consider confirmatory studies (immunophenotyping/flow, serum/urine electrophoresis, free light chains) and hematopathology review.`,
+        evidence: { plasmaPct: plasmaPct.toFixed(1) },
+        refs: [],
+      });
+    }
+
+    // Lymphoma-related flags (bone marrow involvement risk)
+    const lymphPct = pct(counts['Lymphs'] || 0, total);
+    const atypCount = counts['Atypical'] || 0;
+
+    if (lymphPct >= defaults.lymph_high_pct && atypCount >= 3) {
+      flags.push({
+        id: 'lymphoma_suspicious_highly',
+        severity: 'red',
+        title: 'Marked lymphocytosis with atypical cells (possible marrow involvement by lymphoma)',
+        message: `Lymphocytes ${lymphPct.toFixed(1)}% with ${atypCount} atypical cells — may indicate lymphoid neoplasm involving marrow. Recommend hematopathology review and confirmatory testing (flow cytometry, immunohistochemistry, molecular studies).`,
+        evidence: { lymphPct: lymphPct.toFixed(1), atypical: atypCount },
+        refs: [
+          { title: 'WHO lymphoid neoplasms guidance', url: 'https://www.who.int' },
+        ],
+      });
+    } else if (atypCount >= defaults.atypical_suspicious_count) {
+      flags.push({
+        id: 'lymphoma_suspicious_atypical',
+        severity: 'orange',
+        title: 'Elevated atypical cells (possible lymphoma involvement)',
+        message: `Atypical cells ${atypCount} — consider hematopathology review and confirmatory tests (flow cytometry, immunostains).`,
+        evidence: { atypical: atypCount },
+        refs: [],
+      });
     }
 
     return flags;
