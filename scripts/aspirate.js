@@ -9,18 +9,25 @@
       <label><strong>Pathologist Initials:</strong></label>
       <span id="aspirateInitialsDisplay"></span>
     </div>
-    <div class="keypad" id="aspirateKeypad"></div>
-    <div class="remap" id="aspirateRemap"></div>
+    <div style="display:flex; gap:12px; align-items:flex-start;">
+      <div style="flex:1;">
+        <div class="keypad" id="aspirateKeypad"></div>
+        <div class="remap" id="aspirateRemap"></div>
+      </div>
+      <div style="width:360px;">
+        <div id="aspirateNews" class="news-scroll" style="display:none"></div>
+      </div>
+    </div>
     <div id="aspirateUnassignedWarning" style="color: red; font-weight: bold; margin-top: 6px;"></div>
     <div class="counter-display" id="aspirateDisplay"></div>
     <div><strong>Total:</strong> <span id="aspirateTotal">0 / 500</span></div>
     <div><strong>M:E Ratio:</strong> <span id="aspirateRatio">–</span></div>
     <button onclick="aspirateUndoAll()">Undo All</button>
-    <button onclick="aspirateExportExcel()">Export Case to Excel</button>
     <textarea id="aspirateLog"></textarea>
     <div id="aspirateChartContainer">
       <canvas id="aspirateChart"></canvas>
     </div>
+    <div id="aspirateFlags" class="flags-panel" style="display:none"></div>
   `;
 
   const beep = new Audio("media/100.wav");
@@ -121,9 +128,14 @@
       aspirateApp.classList.contains("active")
     ) {
       playSound(chime);
-      aspirateExportExcel();
-      document.getElementById("aspirateOverrideContainer").style.display =
-        "block";
+      // exporter is a no-op
+      if (typeof window.aspirateExportExcel === 'function') window.aspirateExportExcel();
+      try {
+        const overrideEl = document.getElementById("aspirateOverrideContainer");
+        if (overrideEl) overrideEl.style.display = "block";
+      } catch (e) {
+        // ignore if element not present
+      }
     } else if (totalCount > MAX_COUNT && !allowOverLimit) {
       return; // prevent over-limit count
     }
@@ -180,6 +192,22 @@
     snap.push({ CellType: "M:E Ratio", Count: meRatio, Percent: "" });
 
     snapshots[`Count_${count}`] = snap;
+
+    // Append to news feed and evaluate rules (defensive)
+    try {
+      const snapshotObj = { cellCounts: Object.assign({}, cellCounts), total: count, meRatio: meRatio, context: 'aspirate' };
+      if (window.ruleEngine && typeof window.ruleEngine.evaluate === 'function') {
+        const flags = window.ruleEngine.evaluate(snapshotObj);
+        if (typeof window.ruleEngine.updateFlags === 'function') {
+          window.ruleEngine.updateFlags('aspirateFlags', snapshotObj);
+        }
+        if (flags && flags.length && typeof window.ruleEngine.appendNews === 'function') {
+          window.ruleEngine.appendNews('aspirateNews', `Aspirate Count ${count}`, flags);
+        }
+      }
+    } catch (e) {
+      console.warn('Rule engine snapshot append failed (aspirate)', e);
+    }
   }
 
   function createKeypad() {
@@ -307,6 +335,16 @@
     document.getElementById("aspirateRatio").textContent = meRatio;
 
     updateChart();
+
+    // Evaluate rules and update flags panel (if rule engine loaded)
+    try {
+      const snapshot = { cellCounts: Object.assign({}, cellCounts), total: totalCount, meRatio: meRatio, context: 'aspirate' };
+      if (window.ruleEngine && typeof window.ruleEngine.updateFlags === 'function') {
+        window.ruleEngine.updateFlags('aspirateFlags', snapshot);
+      }
+    } catch (e) {
+      console.warn('ruleEngine update failed', e);
+    }
   }
 
   function createRemapArea() {
@@ -386,18 +424,10 @@
     saveState();
   };
 
+  // Exporter replaced with a safe no-op to disable client-side downloads
   window.aspirateExportExcel = function () {
-    const caseNumber = window.caseInfo.caseNumber || "Case";
-    const initials = window.caseInfo.initials || "Path";
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const workbook = XLSX.utils.book_new();
-    Object.keys(snapshots).forEach((label) => {
-      const ws = XLSX.utils.json_to_sheet(snapshots[label]);
-      XLSX.utils.book_append_sheet(workbook, ws, label);
-    });
-    const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-    const blob = new Blob([wbout], { type: "application/octet-stream" });
-    saveAs(blob, `${caseNumber}_${initials}.xlsx`);
+    console.warn("aspirateExportExcel() called but export is disabled.");
+    // alert("Export is disabled in this build.");
   };
 
   log.addEventListener("input", () => {
@@ -436,7 +466,7 @@
       const aspirateApp = document.getElementById("aspirateApp");
       if (aspirateApp && aspirateApp.classList.contains("active")) {
         playSound(chime);
-        aspirateExportExcel();
+        if (typeof window.aspirateExportExcel === 'function') window.aspirateExportExcel();
       }
     }
   });
@@ -532,21 +562,6 @@
     const initials = document
       .getElementById("aspiratePathInitials")
       .value.trim();
-
-    // if (!caseNumber || !initials) {
-    //   if (!caseNumber) {
-    //     document.getElementById("aspirateCaseNumber").style.border =
-    //       "2px solid red";
-    //   }
-    //   if (!initials) {
-    //     document.getElementById("aspiratePathInitials").style.border =
-    //       "2px solid red";
-    //   }
-    //   alert(
-    //     "Please enter both the case number and pathologist initials before starting."
-    //   );
-    //   return;
-    // }
 
     const aspirateApp = document.getElementById("aspirateApp");
     if (!aspirateApp || !aspirateApp.classList.contains("active")) return;
